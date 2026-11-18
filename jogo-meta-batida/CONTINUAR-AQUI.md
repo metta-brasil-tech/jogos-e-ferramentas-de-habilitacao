@@ -16,9 +16,9 @@ próprias. Começou **vazio** — nenhum cliente cadastrado.
 
 | O quê | Onde |
 |---|---|
-| Código | GitHub `metta-brasil-tech/jogo-meta-batida` |
-| Site (GitHub Pages) | `https://metta-brasil-tech.github.io/jogo-meta-batida/` |
-| Criar cliente novo | `.../clientes.html` (senha master) |
+| Código | GitHub `metta-brasil-tech/jogos-e-ferramentas-de-habilitacao`, pasta `jogo-meta-batida/` (o repositório vai guardar outros jogos/ferramentas da Metta, cada um na sua pasta) |
+| Site (GitHub Pages) | `https://metta-brasil-tech.github.io/jogos-e-ferramentas-de-habilitacao/jogo-meta-batida/` |
+| Criar cliente novo | `.../jogo-meta-batida/clientes.html` (senha master) |
 | Supabase | projeto `rcmspjlocnuugcsfzles` ("JOGOS E FERRAMENTAS DE HABILITAÇÃO"), us-east-2 |
 | Edge Function | `https://rcmspjlocnuugcsfzles.supabase.co/functions/v1/api/<rota>` |
 | Publishable key (pública, vai no frontend) | `sb_publishable_l22yITYLod8mBjxNnK3BFA_LkQj1MIZ` |
@@ -42,7 +42,8 @@ cliente são definidas por quem cria o cliente, na tela `clientes.html`.
 
 ## 4. Como operar o Supabase desta instância
 
-- A CLI só roda via `npx --yes supabase ...` nesta máquina.
+- A CLI só roda via `npx --yes supabase ...` nesta máquina, **de dentro da pasta
+  `jogo-meta-batida/`** (é onde fica o `supabase/`).
 - Esta pasta está linkada ao projeto da Metta. **Use sempre o token da conta da Metta por
   comando**, sem trocar o login global (que é a conta pessoal do Pedro):
   `SUPABASE_ACCESS_TOKEN=<token da Metta> npx --yes supabase <comando> --yes </dev/null`.
@@ -62,9 +63,13 @@ cliente são definidas por quem cria o cliente, na tela `clientes.html`.
 - `gh` nesta máquina tem duas contas: `Metta-Brasil` e `PedroNavar`. Antes de qualquer
   push aqui: `gh auth switch --user Metta-Brasil`; depois, se for mexer no protótipo
   pessoal, voltar com `gh auth switch --user PedroNavar`.
-- Deploy do site é automático (`.github/workflows/pages.yml`) a cada push em `frontend/`.
+- Deploy do site é automático (`.github/workflows/pages.yml`, na RAIZ do repositório) a
+  cada push em qualquer `*/frontend/`. O workflow monta o site com uma subpasta por jogo;
+  pra publicar um jogo novo, acrescentar a pasta dele no passo "Montar o site".
 - A organização está no plano **free**: GitHub Pages só funciona com o repositório
-  **público** — por isso ele é público. Nunca commitar senha ou token.
+  **público** — por isso ele é público (decisão do Pedro em 2026-11-18, depois de entender
+  a limitação). Se um projeto futuro precisar de código privado: repositório privado +
+  Cloudflare Pages (grátis) ou assinar o GitHub Team. Nunca commitar senha ou token.
 
 ## 6. Diferenças em relação ao protótipo do Pedro
 

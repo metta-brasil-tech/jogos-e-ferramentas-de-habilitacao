@@ -1,8 +1,11 @@
-name: Publicar frontend no GitHub Pages
+name: Publicar sites no GitHub Pages
+# Cada jogo/ferramenta do repositório vira uma subpasta do site:
+#   https://metta-brasil-tech.github.io/jogos-e-ferramentas-de-habilitacao/<pasta>/
+# Pra publicar um jogo novo: acrescentar a pasta do frontend dele no passo "Montar o site".
 on:
   push:
     branches: [main]
-    paths: [frontend/**, .github/workflows/pages.yml]
+    paths: ['*/frontend/**', .github/workflows/pages.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,8 +22,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Montar o site
+        run: |
+          mkdir -p _site
+          cp -r jogo-meta-batida/frontend _site/jogo-meta-batida
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: frontend
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

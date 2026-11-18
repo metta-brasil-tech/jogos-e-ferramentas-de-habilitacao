@@ -1,4 +1,4 @@
-supabase/.temp/
+**/supabase/.temp/
 
 # Claude Code e segredos: nunca no Git (auditoria 17/11/2026).
 .claude/

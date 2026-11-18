@@ -1,0 +1,2 @@
+-- Define a senha master desta instância (gerada e mostrada uma vez pro Pedro em chat).
+-- Redigido aqui de propósito antes do commit: senha não entra em texto puro no git.

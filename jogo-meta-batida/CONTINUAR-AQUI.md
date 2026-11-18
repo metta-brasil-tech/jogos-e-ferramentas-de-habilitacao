@@ -67,8 +67,12 @@ cliente são definidas por quem cria o cliente, na tela `clientes.html`.
   cada push em qualquer `*/frontend/`. O workflow monta o site com uma subpasta por jogo;
   pra publicar um jogo novo, acrescentar a pasta dele no passo "Montar o site".
 - A organização está no plano **free**: GitHub Pages só funciona com o repositório
-  **público** — por isso ele é público (decisão do Pedro em 2026-11-18, depois de entender
-  a limitação). Se um projeto futuro precisar de código privado: repositório privado +
+  **público** — por isso ele é público (decisão do Pedro em 2026-11-18). Foi testado de
+  verdade: o repositório nasceu privado e a API do GitHub recusou ligar o Pages
+  ("Your current plan does not support GitHub Pages for this repository", HTTP 422).
+- Esta pasta local tem `credential.helper` apontando pro `gh` (`git config --local`), então
+  `git push` usa a conta ativa do `gh` — por isso a conta ativa precisa ser `Metta-Brasil`.
+  Sem isso, o git usava o login salvo da conta pessoal e respondia "Repository not found". Se um projeto futuro precisar de código privado: repositório privado +
   Cloudflare Pages (grátis) ou assinar o GitHub Team. Nunca commitar senha ou token.
 
 ## 6. Diferenças em relação ao protótipo do Pedro

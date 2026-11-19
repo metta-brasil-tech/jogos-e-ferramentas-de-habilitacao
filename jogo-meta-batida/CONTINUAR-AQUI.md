@@ -18,6 +18,11 @@ gerente e admin (os hashes foram copiados). A logo está em `frontend/img/logo-v
 deste repositório. Link: `.../jogo-meta-batida/?c=vilarejo`. A Vilarejo continua também no
 protótipo; daqui pra frente as duas cópias andam separadas (rodada jogada numa não aparece na outra).
 
+`protocolo-metta` (desde 2026-11-19): "Time Metta", teste interno do time da Metta sobre o
+Protocolo M.E.T.T.A. 1 loja ("Metta"), 20 perguntas no bloco "Protocolo METTA" (tema = fase,
+tipo = nível), rodada "Protocolo M.E.T.T.A · Teste do time" de 18 s por pergunta. Para entrar
+no pódio, o time escolhe o cargo Vendedor (Regional e Outro ficam fora do pódio).
+
 ## 2. Onde está tudo
 
 | O quê | Onde |

@@ -307,7 +307,7 @@ Deno.serve(async (req) => {
         } : null,
         lojas: lojas ?? [],
         nomes,
-        tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url },
+        tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url, sobretitulo: tenant.sobretitulo },
       });
     }
 
@@ -432,6 +432,7 @@ Deno.serve(async (req) => {
       if (existe) return erro("Já existe um cliente com esse slug.", 409);
       const { data: novo, error } = await db.from("tenant").insert({
         slug, nome, logo_url: body.logoUrl || null, cor_primaria: body.cor || null,
+        sobretitulo: String(body.sobretitulo ?? "").trim() || null,
         senha_gerente_hash: "placeholder", senha_admin_hash: "placeholder",
       }).select("id").single();
       if (error || !novo) return erro("Não foi possível criar o cliente: " + (error?.message ?? ""), 500);
@@ -517,7 +518,7 @@ Deno.serve(async (req) => {
           perguntasExcluidas: ps.filter((p: any) => p.excluida_em)
             .map((p: any) => ({ id: p.id, texto: p.texto, bloco: p.bloco, excluidaEm: p.excluida_em })),
           blocos, lojas: lojas ?? [],
-          tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url },
+          tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url, sobretitulo: tenant.sobretitulo },
         });
       }
 

@@ -29,7 +29,7 @@ $('form-cliente').addEventListener('submit',async e=>{
   await api('/api/tenant-criar',{body:{
    senhaMaster,
    nome:$('c-nome').value.trim(),slug,
-   logoUrl:$('c-logo').value.trim()||null,cor:$('c-cor').value.trim()||null,
+   logoUrl:$('c-logo').value.trim()||null,cor:$('c-cor').value.trim()||null,sobretitulo:$('c-sobretitulo').value.trim()||null,
    senhaGerente:$('c-senha-gerente').value,senhaAdmin:$('c-senha-admin').value,
   }});
   const base=baseUrl();

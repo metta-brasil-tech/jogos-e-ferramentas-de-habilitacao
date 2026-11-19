@@ -17,6 +17,7 @@ export function linkComTenant(caminho) {
 // subpasta própria, resolvido só por ?c=, também fica com a cara certa). Chame de novo a
 // cada /config (ou /admin "estado") recebido — idempotente.
 export function aplicarMarca(config) {
+ const sobre=document.getElementById('sobretitulo-entrada');if(sobre&&config?.tenant?.sobretitulo)sobre.textContent=config.tenant.sobretitulo;
  if(config?.tenant?.cor)document.documentElement.style.setProperty('--amarelo',config.tenant.cor);
  if(config?.tenant?.logo)for(const img of document.querySelectorAll('.logo-cliente')){img.src=config.tenant.logo;if(config.tenant.nome)img.alt=config.tenant.nome;}
 }

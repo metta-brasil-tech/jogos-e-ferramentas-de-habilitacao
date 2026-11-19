@@ -96,7 +96,8 @@ cliente são definidas por quem cria o cliente, na tela `clientes.html`.
 ## 7. Limitações conhecidas
 
 - Logo é URL de imagem (sem upload de arquivo/Storage).
-- O título da aba do navegador não troca por cliente (só a logo e a cor trocam).
+- O título da aba do navegador não troca por cliente (trocam a logo, a cor e a frase acima do
+  título da entrada, coluna `tenant.sobretitulo`; vazia = "VENDA 4.0 E PRODUTOS").
 - Admin sem sessão: a senha vai em cada chamada; o link do CSV/Excel leva a senha na URL
   (decisão do Pedro em 2026-11-14 — não trocar sem ele pedir).
 - Pódio "por loja" ainda calcula o top-3 geral.

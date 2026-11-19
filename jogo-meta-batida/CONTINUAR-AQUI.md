@@ -12,6 +12,12 @@ Quiz de vendas gamificado (pontuação por velocidade, pódio ao vivo, telão), 
 cada cliente da Metta é um *tenant* com marca (logo, cor), lojas, perguntas e rodadas
 próprias. Começou **vazio** — nenhum cliente cadastrado.
 
+**Clientes:** `vilarejo` (desde 2026-11-19), cópia fiel do cliente Vilarejo do protótipo do
+Pedro: mesmo id, lojas, perguntas, rodadas, jogadores, respostas e as **mesmas senhas** de
+gerente e admin (os hashes foram copiados). A logo está em `frontend/img/logo-vilarejo-branca.png`
+deste repositório. Link: `.../jogo-meta-batida/?c=vilarejo`. A Vilarejo continua também no
+protótipo; daqui pra frente as duas cópias andam separadas (rodada jogada numa não aparece na outra).
+
 ## 2. Onde está tudo
 
 | O quê | Onde |

@@ -53,3 +53,25 @@
  .admin #conteudo>h2{font-size:22px}.admin article h2{font-size:18px}.admin dialog{padding:24px}.admin th,.admin td{padding:12px}
 }
 th{white-space:nowrap;overflow-wrap:normal;word-break:normal}
+
+/* Perguntas no admin: alternativas visíveis, correta sempre marcada. */
+.pergunta-admin .pergunta-rotulos{font-size:12px;font-weight:600;color:var(--cinza-azul);margin:0 0 6px;letter-spacing:.02em}
+.pergunta-admin .pergunta-texto{font-weight:600;margin:0 0 12px}
+.alternativas{list-style:none;padding:0;margin:0 0 16px;display:grid;gap:6px}
+.alternativa{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #C9DAE3;border-radius:10px;background:var(--branco)}
+.alternativa .letra,.alternativa-edicao .letra{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:6px;background:var(--gelo);font-weight:700;font-size:13px}
+.alternativa .texto-alternativa{flex:1}
+.alternativa.correta{border:2px solid #1E7A45;background:#E7F5EC}
+.alternativa.correta .letra{background:#1E7A45;color:var(--branco)}
+.selo-correta{flex:none;font-size:12px;color:#1E7A45;text-transform:uppercase;letter-spacing:.04em}
+.edicao-pergunta{display:grid;gap:14px;width:min(640px,calc(100vw - 96px));max-width:100%}
+.edicao-pergunta textarea{width:100%;font:inherit;padding:10px;border:1px solid #C9DAE3;border-radius:10px}
+.campo-edicao label{display:block;font-size:12px;font-weight:600;margin:0 0 6px}
+.campo-edicao input{width:100%}
+.alternativas-edicao{border:0;padding:0;margin:0;display:grid;gap:8px}
+.alternativas-edicao legend{font-size:12px;font-weight:600;margin:0 0 8px}
+.alternativa-edicao{display:flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid #C9DAE3;border-radius:10px;cursor:pointer}
+.alternativa-edicao input[type=text]{flex:1;min-width:0;width:auto;margin:0}
+.alternativa-edicao input[type=radio]{width:20px;height:20px;accent-color:#1E7A45;flex:none}
+.alternativa-edicao.correta{border:2px solid #1E7A45;background:#E7F5EC}
+.extras-edicao{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}

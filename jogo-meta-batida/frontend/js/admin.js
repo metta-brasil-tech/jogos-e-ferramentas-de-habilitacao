@@ -193,40 +193,80 @@ $('copiar-base').addEventListener('click',async()=>{
   await atualizar();
  } catch(err) {mensagem(err.message);}
 });
+const LETRAS=['A','B','C','D'];
 function linhaPerguntaExistente(p,acoes) {
- const div=elemento('article',undefined,'painel');
- div.append(elemento('p',(p.base?'[Base] ':'')+p.texto));
- if(p.bloco)div.append(elemento('p','Bloco: '+p.bloco));
+ const div=elemento('article',undefined,'painel pergunta-admin');
+ const rotulos=[p.tema,p.tipo,p.bloco&&('Bloco: '+p.bloco),p.segundos&&(p.segundos+' s')].filter(Boolean);
+ if(rotulos.length)div.append(elemento('p',rotulos.join(' · '),'pergunta-rotulos'));
+ div.append(elemento('p',(p.base?'[Base] ':'')+p.texto,'pergunta-texto'));
+ if(Array.isArray(p.opcoes)&&p.opcoes.length){
+  const lista=elemento('ol',undefined,'alternativas');
+  p.opcoes.forEach((o,i)=>{
+   const certa=i===p.correta;
+   const li=elemento('li',undefined,certa?'alternativa correta':'alternativa');
+   li.append(elemento('span',LETRAS[i],'letra'),elemento('span',o,'texto-alternativa'));
+   if(certa)li.append(elemento('strong','Correta','selo-correta'));
+   lista.append(li);
+  });
+  div.append(lista);
+ }
  const barra=elemento('div',undefined,'barra');
  for(const [texto,fn] of acoes)barra.append(botao(texto,fn));
  div.append(barra);
  return div;
 }
+function campoRotulado(rotulo,campo) {
+ const id='ed-'+Math.random().toString(36).slice(2,9);campo.id=id;
+ const wrap=elemento('div',undefined,'campo-edicao');
+ const l=elemento('label',rotulo);l.htmlFor=id;
+ wrap.append(l,campo);return wrap;
+}
 async function acaoPergunta(acao,id) {await chamar(acao,{id});await atualizar();}
 function editarPergunta(p) {
- const div=elemento('div');
- const texto=input('text','Pergunta');texto.value=p.texto;
- const tipo=input('text','Tipo');tipo.value=p.tipo||'';
- const tema=input('text','Tema');tema.value=p.tema||'';
- const opcoes=p.opcoes.map((o,i)=>{const inp=input('text','Opção '+String.fromCharCode(65+i));inp.value=o;return inp;});
- const correta=elemento('select');
- for(let i=0;i<4;i++){const o=elemento('option','Correta: '+String.fromCharCode(65+i));o.value=String(i);correta.append(o);}
- correta.value=String(p.correta);
- const segundos=input('number','Segundos (padrão da rodada)');segundos.min='5';segundos.max='3600';if(p.segundos)segundos.value=p.segundos;
- const bloco=input('text','Bloco (opcional)');bloco.value=p.bloco||'';bloco.setAttribute('list','blocos-existentes');
- const imagem=input('text','URL da imagem (opcional)');imagem.value=p.imagem||'';
+ const div=elemento('div',undefined,'edicao-pergunta');
+ const texto=elemento('textarea');texto.rows=3;texto.value=p.texto;
+ const nome='correta-'+p.id;
+ const linhas=[0,1,2,3].map(i=>{
+  const linha=elemento('label',undefined,'alternativa-edicao');
+  const radio=elemento('input');radio.type='radio';radio.name=nome;radio.value=String(i);radio.checked=i===p.correta;
+  radio.setAttribute('aria-label','Marcar a alternativa '+LETRAS[i]+' como correta');
+  const inp=input('text','Alternativa '+LETRAS[i]);inp.value=(p.opcoes||[])[i]||'';
+  inp.setAttribute('aria-label','Texto da alternativa '+LETRAS[i]);
+  const marcar=()=>{for(const l of linhasEl)l.classList.toggle('correta',l.querySelector('input[type=radio]').checked);};
+  radio.addEventListener('change',()=>marcar());
+  linha.append(radio,elemento('span',LETRAS[i],'letra'),inp);
+  linha._radio=radio;linha._texto=inp;
+  return linha;
+ });
+ const linhasEl=linhas;
+ for(const l of linhas)l.classList.toggle('correta',l._radio.checked);
+ const tipo=input('text','ex.: Fácil');tipo.value=p.tipo||'';
+ const tema=input('text','ex.: Mapear');tema.value=p.tema||'';
+ const segundos=input('number','padrão da rodada');segundos.min='5';segundos.max='3600';if(p.segundos)segundos.value=p.segundos;
+ const bloco=input('text','opcional');bloco.value=p.bloco||'';bloco.setAttribute('list','blocos-existentes');
+ const imagem=input('text','opcional');imagem.value=p.imagem||'';
+ const aviso=elemento('p','',undefined);aviso.setAttribute('role','status');
  const salvar=botao('Salvar alterações',async()=>{
-  const opcoesVal=opcoes.map(o=>o.value.trim());
-  if(!texto.value.trim() || opcoesVal.some(o=>!o)) {mensagem('Preencha o texto e as 4 opções.');return;}
-  await chamar('pergunta-editar',{
-   id:p.id,texto:texto.value.trim(),tipo:tipo.value.trim()||null,tema:tema.value.trim()||null,
-   opcoes:opcoesVal,correta:Number(correta.value),segundos:segundos.value?Number(segundos.value):null,
-   bloco:bloco.value.trim()||null,imagem:imagem.value.trim()||null,
-  });
-  $('detalhe').close();mensagem('Pergunta atualizada.');
-  await atualizar();
+  const opcoesVal=linhas.map(l=>l._texto.value.trim());
+  const marcada=linhas.findIndex(l=>l._radio.checked);
+  if(!texto.value.trim() || opcoesVal.some(o=>!o)) {aviso.textContent='Preencha a pergunta e as 4 alternativas.';return;}
+  if(marcada<0) {aviso.textContent='Marque qual alternativa é a correta.';return;}
+  try {
+   await chamar('pergunta-editar',{
+    id:p.id,texto:texto.value.trim(),tipo:tipo.value.trim()||null,tema:tema.value.trim()||null,
+    opcoes:opcoesVal,correta:marcada,segundos:segundos.value?Number(segundos.value):null,
+    bloco:bloco.value.trim()||null,imagem:imagem.value.trim()||null,
+   });
+   $('detalhe').close();mensagem('Pergunta atualizada.');
+   await atualizar();
+  } catch(err) {aviso.textContent=err.message;}
  },'principal');
- div.append(texto,tipo,tema,...opcoes,correta,segundos,bloco,imagem,salvar);
+ const grupo=elemento('fieldset',undefined,'alternativas-edicao');
+ grupo.append(elemento('legend','Alternativas (marque a correta)'),...linhas);
+ const extras=elemento('div',undefined,'extras-edicao');
+ extras.append(campoRotulado('Tema',tema),campoRotulado('Tipo / nível',tipo),campoRotulado('Bloco',bloco),
+  campoRotulado('Segundos',segundos),campoRotulado('URL da imagem',imagem));
+ div.append(campoRotulado('Pergunta',texto),grupo,extras,aviso,salvar);
  abrirDetalhe('Editar pergunta',div);
 }
 function desenharPerguntas() {

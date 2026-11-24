@@ -22,6 +22,12 @@ protótipo; daqui pra frente as duas cópias andam separadas (rodada jogada numa
 Protocolo M.E.T.T.A. 1 loja ("Metta"), 20 perguntas no bloco "Protocolo METTA" (tema = fase,
 tipo = nível), rodada "Protocolo M.E.T.T.A · Teste do time" de 18 s por pergunta. Para entrar
 no pódio, o time escolhe o cargo Vendedor (Regional e Outro ficam fora do pódio).
+Desde 2026-11-24 o cliente tem `cargo_fixo = 'Time Metta'` e `rotulo_loja = 'setor'`: o
+jogador não escolhe cargo, escolhe o setor (Consultoria, Projetos, Marketing, Mentoria,
+Comercial, ADM, cadastrados como lojas 01–06), não vê o link de criar rodada, e o ranking
+tem uma lista só. A rodada tem `responsavel = 'Tiago'` e `publico = {Time Metta}`. Qualquer
+cliente pode usar essas duas colunas; vazias, nada muda. O pódio agora exclui só
+Regional e Outro (antes incluía só Vendedor e Gerente; para os cargos padrão, dá no mesmo).
 
 ## 2. Onde está tudo
 

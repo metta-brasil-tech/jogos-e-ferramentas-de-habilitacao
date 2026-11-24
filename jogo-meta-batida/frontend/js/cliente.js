@@ -116,7 +116,7 @@ export function listasPorCargo(botoes,lista,contexto) {
   } catch {if(aberta===cargo){lista.replaceChildren(elemento('p','Não foi possível carregar a lista.'));lista.hidden=false;}}
   finally {pedindo=false;}
  };
- botoes.replaceChildren(...['Regional','Gerente','Vendedor','Outro'].map(cargo=>{
+ const montar=cargos=>{aberta=null;lista.hidden=true;lista.replaceChildren();botoes.replaceChildren(...cargos.map(cargo=>{
   const b=elemento('button',cargo,'discreto');b.type='button';b.setAttribute('aria-pressed','false');
   b.addEventListener('click',()=>{
    aberta=aberta===cargo?null:cargo;
@@ -124,8 +124,33 @@ export function listasPorCargo(botoes,lista,contexto) {
    lista.hidden=true;lista.replaceChildren();void carregar();
   });
   return b;
- }));
+ }));};
+ montar(['Regional','Gerente','Vendedor','Outro']);
+ carregar.montar=montar;
  return carregar;
+}
+// Cliente com cargo fixo (ex.: time interno): some o campo cargo, todos entram com esse cargo,
+// e o campo loja passa a se chamar pelo rótulo do cliente (ex.: "setor").
+export function aplicarCargoFixo(config,listas) {
+ const t=config?.tenant;if(!t)return;
+ if(t.rotuloLoja){
+  const rl=t.rotuloLoja;
+  const lab=document.querySelector('label[for="loja"]');if(lab)lab.textContent='Seu '+rl;
+  const prim=document.querySelector('#loja option[value=""]');if(prim)prim.textContent='Escolha seu '+rl;
+  const regra=document.getElementById('regra-loja');if(regra)regra.textContent='Represente seu '+rl+'.';
+ }
+ if(t.cargoFixo){
+  const sel=document.getElementById('cargo');
+  if(sel && sel.dataset.fixo!==t.cargoFixo){
+   const op=elemento('option',t.cargoFixo);op.value=t.cargoFixo;sel.replaceChildren(op);sel.value=t.cargoFixo;sel.dataset.fixo=t.cargoFixo;
+   sel.closest('.campo').hidden=true;
+  }
+  const criar=document.getElementById('criar-rodada');if(criar)criar.hidden=true;
+  if(listas && listas.botoes && !listas.botoes.dataset.fixo){
+   listas.carregar.montar([t.cargoFixo]);listas.botoes.dataset.fixo='1';
+   const h=listas.botoes.previousElementSibling;if(h&&h.tagName==='H2')h.textContent='Ranking completo';
+  }
+ }
 }
 export function desenharRanking(container,linhas,lojas,id) {
  container.replaceChildren(...linhas.map(p=>{

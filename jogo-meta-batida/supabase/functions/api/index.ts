@@ -22,7 +22,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 const erro = (msg: string, status = 400) => json({ erro: msg }, status);
 
-const PODIO_CARGOS = ["Vendedor", "Gerente"]; // Regional e Outro jogam mas não entram no pódio
+const FORA_DO_PODIO = ["Regional", "Outro"]; // jogam mas não entram no pódio (qualquer outro cargo entra, inclusive o cargo fixo de um cliente)
 
 // ---- Broadcast do ranking (equivalente ao evento SSE "ranking") ------------
 async function emitirRanking(rodadaId: string) {
@@ -41,7 +41,7 @@ async function montarRanking(rodadaId: string) {
   const { data: jogadores } = await db.from("jogador")
     .select("id,nome,loja,cargo,pontos,situacao").eq("rodada_id", rodadaId);
   const js = jogadores ?? [];
-  const top = js.filter((j) => PODIO_CARGOS.includes(j.cargo) && j.pontos > 0)
+  const top = js.filter((j) => !FORA_DO_PODIO.includes(j.cargo) && j.pontos > 0)
     .sort((a, b) => b.pontos - a.pontos).slice(0, 3)
     .map((j) => ({ id: j.id, nome: j.nome, loja: j.loja, cargo: j.cargo, pontos: j.pontos }));
   return {
@@ -193,7 +193,7 @@ async function encerrarRodada(rodadaId: string) {
 async function posicoes(rodadaId: string) {
   const { data } = await db.from("jogador").select("id,cargo,loja,pontos").eq("rodada_id", rodadaId);
   const js = data ?? [];
-  const elegiveis = js.filter((j) => PODIO_CARGOS.includes(j.cargo) && j.pontos > 0)
+  const elegiveis = js.filter((j) => !FORA_DO_PODIO.includes(j.cargo) && j.pontos > 0)
     .sort((a, b) => b.pontos - a.pontos);
   const geral = new Map(elegiveis.map((j, i) => [j.id, i + 1]));
   return { geral, js };
@@ -303,11 +303,11 @@ Deno.serve(async (req) => {
           id: rodada.id, nome: rodada.nome, segundos: rodada.segundos, tempoUnico: true,
           perguntas: (await perguntasDaRodada(rodada.id)).length || null,
           travada: rodada.travada, podio: rodada.podio,
-          publico: rodada.publico, loja: rodada.loja,
+          publico: rodada.publico, loja: rodada.loja, responsavel: rodada.responsavel,
         } : null,
         lojas: lojas ?? [],
         nomes,
-        tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url, sobretitulo: tenant.sobretitulo },
+        tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url, sobretitulo: tenant.sobretitulo, cargoFixo: tenant.cargo_fixo, rotuloLoja: tenant.rotulo_loja },
       });
     }
 
@@ -518,7 +518,7 @@ Deno.serve(async (req) => {
           perguntasExcluidas: ps.filter((p: any) => p.excluida_em)
             .map((p: any) => ({ id: p.id, texto: p.texto, bloco: p.bloco, excluidaEm: p.excluida_em })),
           blocos, lojas: lojas ?? [],
-          tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url, sobretitulo: tenant.sobretitulo },
+          tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url, sobretitulo: tenant.sobretitulo, cargoFixo: tenant.cargo_fixo, rotuloLoja: tenant.rotulo_loja },
         });
       }
 

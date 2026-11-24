@@ -1,4 +1,4 @@
-import { api, lerToken, guardarToken, relogio, enviarResposta, imagemLocal, elemento, desenharPodio, listasPorCargo, conectarRanking, aplicarMarca, linkComTenant } from './cliente.js';
+import { api, lerToken, guardarToken, relogio, enviarResposta, imagemLocal, elemento, desenharPodio, listasPorCargo, conectarRanking, aplicarCargoFixo, aplicarMarca, linkComTenant } from './cliente.js';
 const $=id=>document.getElementById(id);
 const telas=['entrada','instrucoes','jogo','feedback','final'];
 const rodadaLink=new URLSearchParams(globalThis.location?.search ?? '').get('r');
@@ -28,7 +28,7 @@ async function configurar() {
   const c=await api('/api/config'+(rodadaLink?'?r='+encodeURIComponent(rodadaLink):''));config=c;lojas=new Map(c.lojas.map(l=>[l.filial,l.rotulo]));aplicarMarca(c);
   $('criar-rodada').href=linkComTenant('gerente.html');
   if(estado) {$('nova-rodada').hidden=!(c.rodada && c.rodada.id!==estado.rodada.id);return;}
-  $('rodada').textContent=c.mensagem || c.rodada.nome;
+  $('rodada').textContent=c.mensagem || (c.rodada.nome+(c.tenant?.cargoFixo&&c.rodada.responsavel?' · criada por '+c.rodada.responsavel+' para '+c.tenant.cargoFixo:''));
   if(rodadaLink) {
    $('criar-rodada').hidden=true;$('formulario').hidden=!c.rodada;
    if(c.rodada?.publico)for(const op of [...$('cargo').options])if(op.value && !op.textContent.match(/Regional|Outro/) && !c.rodada.publico.includes(op.textContent))op.remove();
@@ -40,6 +40,7 @@ async function configurar() {
   $('loja').firstChild.value='';
   for(const l of c.lojas){const op=elemento('option',l.rotulo);op.value=l.filial;$('loja').append(op);}
   $('loja').value=selecionada;
+  aplicarCargoFixo(c,{botoes:$('listas'),carregar:atualizarLista});verNomes();verCampoLoja();
   if(c.rodada) {
    token=token || lerToken(c.rodada.id);
    if(token)await sincronizar();

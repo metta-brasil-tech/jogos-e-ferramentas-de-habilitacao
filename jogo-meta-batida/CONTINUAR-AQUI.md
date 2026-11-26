@@ -118,3 +118,18 @@ cliente são definidas por quem cria o cliente, na tela `clientes.html`.
    no pódio. 8. Tudo por cliente (tenant).
 
 Contrato completo da API (do sistema antigo, referência): `docs/contrato-api.md`.
+
+## 9. Instância "Foco" (consultores) e logo por bloco (2026-11-26)
+
+- Cliente `foco`: admin único dos consultores (`admin.html?c=foco`). Cada consultor cria um
+  **bloco de perguntas** por cliente final (aba Perguntas → "+ Novo bloco de perguntas") e,
+  ao criar, pode anexar a **logo do cliente** (PNG/JPG/WebP, reduzida a 600 px no navegador).
+  A logo é editável (anexar/trocar/remover) e aparece no jogo e no telão das rodadas daquele
+  bloco, junto da logo da Metta. Dados: tabela `bloco_config(tenant_id, nome, logo_url)` e
+  bucket público `logos` (Storage); rota `bloco-salvar` da função `api`.
+- Tempo: cada pergunta tem o próprio tempo (obrigatório, padrão 30 s); a rodada não escolhe tempo.
+- Rodada criada pelo gerente pede o nome da rodada.
+- Resposta mais rápida: a próxima pergunta é carregada durante o feedback
+  (`GET /jogador?previa=1`, não inicia o relógio) e o ranking ao vivo sai em segundo plano.
+- Todos os consultores usam a mesma senha de admin; qualquer um edita qualquer bloco.
+

@@ -2,6 +2,10 @@ import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js';
 import { API, CLIENTE } from './config.js';
 const $=id=>document.getElementById(id);
 let senha='',estado=null;
+// Bloco em foco na aba Perguntas: '' = todos; SEM_BLOCO = perguntas sem bloco; outro = nome do bloco.
+const SEM_BLOCO='__sem-bloco__';let blocoAtual='';const blocosNovos=new Set();
+const blocoNomeado=()=>blocoAtual!=='' && blocoAtual!==SEM_BLOCO;
+const noBloco=p=>blocoAtual===''?true:blocoAtual===SEM_BLOCO?!p.bloco:p.bloco===blocoAtual;
 const mensagem=m=>{$('mensagem').textContent=m;};
 const chamar=(acao,extra={})=>api('/api/admin',{body:{senha,acao,...extra}});
 const input=(tipo,placeholder)=>{const i=elemento('input');i.type=tipo;i.placeholder=placeholder;return i;};
@@ -163,6 +167,7 @@ function novaLinhaPergunta() {
  for(let i=0;i<4;i++){const o=elemento('option','Correta: '+String.fromCharCode(65+i));o.value=String(i);correta.append(o);}
  const segundos=input('number','Segundos (padrão da rodada)');segundos.min='5';segundos.max='3600';
  const bloco=input('text','Bloco (opcional, ex.: Bloco 1)');bloco.setAttribute('list','blocos-existentes');
+ if(blocoNomeado()){bloco.value=blocoAtual;bloco.readOnly=true;bloco.title='Esta pergunta entra no bloco '+blocoAtual;}
  const imagem=input('text','URL da imagem (opcional)');
  const remover=botao('Remover esta pergunta',()=>linha.remove());
  linha.append(texto,tipo,tema,...opcoes,correta,segundos,bloco,imagem,remover);
@@ -269,21 +274,57 @@ function editarPergunta(p) {
  div.append(campoRotulado('Pergunta',texto),grupo,extras,aviso,salvar);
  abrirDetalhe('Editar pergunta',div);
 }
+function desenharFiltroBlocos() {
+ const nomes=[...new Set([...estado.blocos,...blocosNovos])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ if(blocoNomeado() && !nomes.includes(blocoAtual))nomes.push(blocoAtual);
+ const sel=$('filtro-bloco');
+ const op=(t,v)=>{const o=elemento('option',t);o.value=v;return o;};
+ sel.replaceChildren(op('Todos os blocos',''),...nomes.map(n=>op(n,n)),op('Sem bloco',SEM_BLOCO));
+ sel.value=blocoAtual;
+ const ativas=estado.perguntasAtivas.filter(noBloco).length;
+ $('bloco-info').textContent=blocoNomeado()
+  ?`Bloco "${blocoAtual}": ${ativas} pergunta(s) ativa(s). As perguntas novas entram neste bloco.`
+  :blocoAtual===SEM_BLOCO?`Perguntas sem bloco: ${ativas} ativa(s).`:'Mostrando as perguntas de todos os blocos.';
+ $('titulo-lote').textContent=blocoNomeado()?'Cadastrar perguntas no bloco "'+blocoAtual+'"':'Cadastrar perguntas (em lote)';
+}
+function trocarBloco(novo,abrirVazio=false) {
+ if(novo===blocoAtual && !abrirVazio)return true;
+ if($('lote-perguntas').children.length && !confirm('Há perguntas não salvas na área de cadastro. Descartar e trocar de bloco?')){$('filtro-bloco').value=blocoAtual;return false;}
+ blocoAtual=novo;$('lote-perguntas').replaceChildren();
+ if(abrirVazio)$('lote-perguntas').append(novaLinhaPergunta());
+ desenharPerguntas();return true;
+}
+$('filtro-bloco').addEventListener('change',()=>trocarBloco($('filtro-bloco').value));
+$('novo-bloco').addEventListener('click',()=>{$('novo-bloco-form').hidden=false;$('nome-novo-bloco').value='';$('nome-novo-bloco').focus();});
+$('cancelar-bloco').addEventListener('click',()=>{$('novo-bloco-form').hidden=true;});
+const criarBloco=()=>{
+ const nome=$('nome-novo-bloco').value.trim().replace(/\s+/g,' ');
+ if(!nome)return mensagem('Dê um nome ao bloco.');
+ if(nome===SEM_BLOCO)return mensagem('Escolha outro nome.');
+ const existe=estado.blocos.includes(nome)||blocosNovos.has(nome);
+ if(!existe)blocosNovos.add(nome);
+ if(!trocarBloco(nome,!existe))return;
+ $('novo-bloco-form').hidden=true;
+ mensagem(existe?`O bloco "${nome}" já existia: mostrando as perguntas dele.`:`Bloco "${nome}" criado. Preencha as perguntas e clique em "Salvar todas"; o bloco só fica gravado com a primeira pergunta salva.`);
+};
+$('criar-bloco').addEventListener('click',criarBloco);
+$('nome-novo-bloco').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();criarBloco();}});
 function desenharPerguntas() {
- $('lista-ativas').replaceChildren(...estado.perguntasAtivas.map(p=>linhaPerguntaExistente(p,[
+ desenharFiltroBlocos();
+ $('lista-ativas').replaceChildren(...estado.perguntasAtivas.filter(noBloco).map(p=>linhaPerguntaExistente(p,[
   ['Editar',()=>editarPergunta(p)],
   ['Ocultar',()=>acaoPergunta('pergunta-ocultar',p.id)],['Excluir',()=>acaoPergunta('pergunta-excluir',p.id)],
  ])));
- $('lista-ocultas').replaceChildren(...estado.perguntasOcultas.map(p=>linhaPerguntaExistente(p,[
+ $('lista-ocultas').replaceChildren(...estado.perguntasOcultas.filter(noBloco).map(p=>linhaPerguntaExistente(p,[
   ['Editar',()=>editarPergunta(p)],
   ['Reativar',()=>acaoPergunta('pergunta-reativar',p.id)],['Excluir',()=>acaoPergunta('pergunta-excluir',p.id)],
  ])));
- $('lista-excluidas').replaceChildren(...estado.perguntasExcluidas.map(p=>linhaPerguntaExistente(p,[
+ $('lista-excluidas').replaceChildren(...estado.perguntasExcluidas.filter(noBloco).map(p=>linhaPerguntaExistente(p,[
   ['Restaurar',()=>acaoPergunta('pergunta-restaurar',p.id)],
  ])));
- if(!estado.perguntasAtivas.length)$('lista-ativas').append(elemento('p','Nenhuma.'));
- if(!estado.perguntasOcultas.length)$('lista-ocultas').append(elemento('p','Nenhuma.'));
- if(!estado.perguntasExcluidas.length)$('lista-excluidas').append(elemento('p','Nenhuma.'));
+ if(!estado.perguntasAtivas.filter(noBloco).length)$('lista-ativas').append(elemento('p','Nenhuma.'));
+ if(!estado.perguntasOcultas.filter(noBloco).length)$('lista-ocultas').append(elemento('p','Nenhuma.'));
+ if(!estado.perguntasExcluidas.filter(noBloco).length)$('lista-excluidas').append(elemento('p','Nenhuma.'));
 }
 
 // ---- Abas, login e atualização geral ------------------------------------

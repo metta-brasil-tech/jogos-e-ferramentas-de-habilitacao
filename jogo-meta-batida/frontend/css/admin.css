@@ -75,3 +75,13 @@ th{white-space:nowrap;overflow-wrap:normal;word-break:normal}
 .alternativa-edicao input[type=radio]{width:20px;height:20px;accent-color:#1E7A45;flex:none}
 .alternativa-edicao.correta{border:2px solid #1E7A45;background:#E7F5EC}
 .extras-edicao{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+
+/* Blocos de perguntas: escolher o bloco em foco ou abrir um bloco novo, vazio. */
+.blocos-barra{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin:0 0 12px}
+.campo-bloco{flex:1 1 260px;min-width:0}
+.campo-bloco label,.novo-bloco label{display:block;font-size:12px;font-weight:600;margin:0 0 6px}
+.campo-bloco select{width:100%}
+.novo-bloco{padding:16px;border:1px dashed #C9DAE3;border-radius:12px;margin:0 0 12px}
+.novo-bloco-linha{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.novo-bloco-linha input{flex:1 1 240px;min-width:0;margin:0}
+.bloco-info{font-size:14px;color:var(--cinza-azul);margin:0 0 8px}

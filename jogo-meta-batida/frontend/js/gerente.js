@@ -26,7 +26,7 @@ $('formulario').addEventListener('submit',async e=>{
  e.preventDefault();if(ocupado)return;ocupado=true;status('');senha=$('senha').value;
  try {
   const responsavel=$('nome-lista').required && $('nome-lista').value!=='outro'?$('nome-lista').value:$('nome').value;
-  rodada=await api('/api/gerente',{body:{senha,acao:'criar',papel:$('papel').value,responsavel,loja:$('loja').value,publico:$('publico').value}});
+  rodada=await api('/api/gerente',{body:{senha,acao:'criar',papel:$('papel').value,responsavel,loja:$('loja').value,publico:$('publico').value,nomeRodada:$('nome-rodada-novo').value.trim()}});
   mostrar();espera=setInterval(acompanhar,3000);
  } catch(erro) {status(erro.message);} finally {ocupado=false;}
 });

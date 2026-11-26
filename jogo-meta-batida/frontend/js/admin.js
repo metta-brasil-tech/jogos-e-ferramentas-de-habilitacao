@@ -165,7 +165,7 @@ function novaLinhaPergunta() {
  const opcoes=[0,1,2,3].map(i=>input('text','Opção '+String.fromCharCode(65+i)));
  const correta=elemento('select');
  for(let i=0;i<4;i++){const o=elemento('option','Correta: '+String.fromCharCode(65+i));o.value=String(i);correta.append(o);}
- const segundos=input('number','Segundos (padrão da rodada)');segundos.min='5';segundos.max='3600';
+ const segundos=input('number','Segundos (só vale se for maior que o da rodada)');segundos.min='5';segundos.max='3600';
  const bloco=input('text','Bloco (opcional, ex.: Bloco 1)');bloco.setAttribute('list','blocos-existentes');
  if(blocoNomeado()){bloco.value=blocoAtual;bloco.readOnly=true;bloco.title='Esta pergunta entra no bloco '+blocoAtual;}
  const imagem=input('text','URL da imagem (opcional)');
@@ -247,7 +247,7 @@ function editarPergunta(p) {
  for(const l of linhas)l.classList.toggle('correta',l._radio.checked);
  const tipo=input('text','ex.: Fácil');tipo.value=p.tipo||'';
  const tema=input('text','ex.: Mapear');tema.value=p.tema||'';
- const segundos=input('number','padrão da rodada');segundos.min='5';segundos.max='3600';if(p.segundos)segundos.value=p.segundos;
+ const segundos=input('number','só vale se for maior que o da rodada');segundos.min='5';segundos.max='3600';if(p.segundos)segundos.value=p.segundos;
  const bloco=input('text','opcional');bloco.value=p.bloco||'';bloco.setAttribute('list','blocos-existentes');
  const imagem=input('text','opcional');imagem.value=p.imagem||'';
  const aviso=elemento('p','',undefined);aviso.setAttribute('role','status');

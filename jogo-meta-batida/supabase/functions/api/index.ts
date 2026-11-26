@@ -83,6 +83,11 @@ function embaralhar<T>(lista: T[]): T[] {
 }
 
 // ---- Congela a lista de perguntas na entrada do 1º jogador ------------------
+// Tempo de uma pergunta: vale o MAIOR entre o da pergunta e o da rodada (pergunta sem tempo
+// próprio, ou com tempo menor, fica com o da rodada).
+const tempoDaPergunta = (q: any, rodada: any) => Math.max(Number(q?.segundos) || 0, Number(rodada.segundos) || 30);
+const tempoUnicoDa = (perguntas: any[], rodada: any) => perguntas.every((p: any) => tempoDaPergunta(p, rodada) === rodada.segundos);
+
 async function congelar(rodada: any) {
   if (rodada.iniciada) return;
   let q = db.from("pergunta").select("*")
@@ -211,7 +216,7 @@ async function estadoDe(token: string, feedback?: any) {
   const base: any = {
     rodada: {
       id: rodada.id, nome: rodada.nome, segundos: rodada.segundos,
-      tempoUnico: true, perguntas: total, travada: rodada.travada, podio: rodada.podio,
+      tempoUnico: tempoUnicoDa(perguntas, rodada), perguntas: total, travada: rodada.travada, podio: rodada.podio,
     },
     jogador: {
       id: j.id, nome: j.nome, loja: j.loja, cargo: j.cargo,
@@ -231,7 +236,7 @@ async function estadoDe(token: string, feedback?: any) {
   const ordem = j.ordem_perguntas?.length === total ? j.ordem_perguntas : perguntas.map((_: any, i: number) => i);
   const q = perguntas[ordem[j.indice_atual]];
   if (!q) return { ...base, situacao: "terminou" };
-  const segs = q.segundos ?? rodada.segundos;
+  const segs = tempoDaPergunta(q, rodada);
   const totalMs = segs * 1000;
   // O cronômetro só começa quando ESTA chamada é a primeira a buscar a pergunta (lazy):
   // /comecar e /responder deixam pergunta_iniciada_em em null ao avançar, pra não descontar
@@ -299,12 +304,12 @@ Deno.serve(async (req) => {
       return json({
         liberado: !!rodada && rodada.status === "aberta",
         mensagem: rodada ? null : (tenant.mensagem_home ?? "Aguarde o instrutor abrir o jogo"),
-        rodada: rodada ? {
-          id: rodada.id, nome: rodada.nome, segundos: rodada.segundos, tempoUnico: true,
-          perguntas: (await perguntasDaRodada(rodada.id)).length || null,
+        rodada: rodada ? await (async () => { const pr = await perguntasDaRodada(rodada.id); return {
+          id: rodada.id, nome: rodada.nome, segundos: rodada.segundos, tempoUnico: tempoUnicoDa(pr, rodada),
+          perguntas: pr.length || null,
           travada: rodada.travada, podio: rodada.podio,
           publico: rodada.publico, loja: rodada.loja, responsavel: rodada.responsavel,
-        } : null,
+        }; })() : null,
         lojas: lojas ?? [],
         nomes,
         tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url, sobretitulo: tenant.sobretitulo, cargoFixo: tenant.cargo_fixo, rotuloLoja: tenant.rotulo_loja },
@@ -386,7 +391,7 @@ Deno.serve(async (req) => {
         .eq("jogador_id", j.id).eq("ordem", j.indice_atual).maybeSingle();
       if (jaRespondeu) return erro("Resposta já registrada.", 409);
 
-      const segs = q.segundos ?? rodada.segundos;
+      const segs = tempoDaPergunta(q, rodada);
       const totalMs = segs * 1000;
       const inicio = j.pergunta_iniciada_em ? new Date(j.pergunta_iniciada_em).getTime() : Date.now();
       const restanteMs = Math.max(0, totalMs - (Date.now() - inicio));
@@ -458,7 +463,7 @@ Deno.serve(async (req) => {
         const publico = papel === "Regional" ? (PUBLICO_POR_OPCAO[body.publico] ?? null) : null;
         const { data: nova, error } = await db.from("rodada").insert({
           tenant_id: tenant.id,
-          nome: (papel === "Regional" ? "Rodada regional de " : "Rodada de ") + responsavel,
+          nome: String(body.nomeRodada ?? "").trim().slice(0, 80) || (papel === "Regional" ? "Rodada regional de " : "Rodada de ") + responsavel,
           status: "aberta", segundos: 30, podio: loja ? "loja" : "geral",
           responsavel, travada: true, grupo: true, loja, publico,
           criada_por: "gerente", aberta_em: new Date().toISOString(),

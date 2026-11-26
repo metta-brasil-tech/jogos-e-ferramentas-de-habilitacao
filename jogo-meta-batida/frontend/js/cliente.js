@@ -19,7 +19,9 @@ export function linkComTenant(caminho) {
 export function aplicarMarca(config) {
  const sobre=document.getElementById('sobretitulo-entrada');if(sobre&&config?.tenant?.sobretitulo)sobre.textContent=config.tenant.sobretitulo;
  if(config?.tenant?.cor)document.documentElement.style.setProperty('--amarelo',config.tenant.cor);
- if(config?.tenant?.logo)for(const img of document.querySelectorAll('.logo-cliente')){img.src=config.tenant.logo;if(config.tenant.nome)img.alt=config.tenant.nome;}
+ // A logo do bloco de perguntas da rodada (anexada pelo consultor) vale mais que a do cliente.
+ const logoBloco=config?.rodada?.logo,logo=logoBloco||config?.tenant?.logo;
+ if(logo)for(const img of document.querySelectorAll('.logo-cliente')){if(img.getAttribute('src')!==logo)img.src=logo;img.classList.toggle('logo-bloco',Boolean(logoBloco));if(config.tenant?.nome)img.alt=config.tenant.nome;}
 }
 const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false}});
 // /config, /entrar, /gerente e /admin(/csv) resolvem o tenant por ?c=; as demais rotas já

@@ -4,7 +4,7 @@ const telas=['entrada','instrucoes','jogo','feedback','final'];
 const rodadaLink=new URLSearchParams(globalThis.location?.search ?? '').get('r');
 let token=null,estado=null,config=null,lojas=new Map(),geral=false;
 let ocupado=false,sincronizando=false,configurando=false,enviando=false,respondida=null,restante=()=>0;
-let perguntaAtual=null,feedbackAte=0,proximoSync=0,ultimaConsulta=0,rankingEm=0,tela='entrada',esperou=false;
+let proxima=null,perguntaAtual=null,feedbackAte=0,proximoSync=0,ultimaConsulta=0,rankingEm=0,tela='entrada',esperou=false;
 const status=mensagem=>{$('status').textContent=mensagem;};
 function mostrar(id) {document.body.classList.toggle('em-jogo',id==='jogo');tela=id;for(const t of telas)$(t).hidden=t!==id;}
 const verLoja=()=>estado.rodada.podio==='loja'&&Boolean(estado.jogador.loja)&&!geral;
@@ -53,7 +53,15 @@ function renderizar(e,latencia=0) {
  estado=e;posicao();conectar();
  $('alternar').hidden=e.rodada.podio!=='loja' || !e.jogador.loja;
  if(e.feedback) {
-  mostrar('feedback');$('mensagem-feedback').textContent=e.feedback.mensagem;
+  mostrar('feedback');
+  const acertou=e.feedback.pontos>0;
+  $('mensagem-feedback').textContent=acertou?e.feedback.mensagem:'Não foi dessa vez';
+  $('detalhe-feedback').textContent=acertou?'':e.feedback.mensagem;$('detalhe-feedback').hidden=acertou;
+  $('icone-feedback').textContent=acertou?'✓':'✕';
+  $('caixa-feedback').classList.toggle('caixa-certa',acertou);$('caixa-feedback').classList.toggle('caixa-errada',!acertou);
+  // Carrega a próxima pergunta enquanto o feedback aparece (sem iniciar o relógio dela).
+  proxima=null;
+  api('/api/jogador?previa=1',{token}).then(r=>{if(tela==='feedback' && r && !r.feedback && (r.pergunta || ['terminou','encerrada'].includes(r.situacao)))proxima=r;}).catch(()=>{});
   $('feedback').classList.toggle('acerto',e.feedback.pontos>0);$('feedback').classList.toggle('errou',e.feedback.pontos===0);
   feedbackAte=performance.now()+Math.max(0,e.feedback.restanteMs-latencia);proximoSync=feedbackAte+30;return;
  }
@@ -155,6 +163,7 @@ $('nova-rodada').addEventListener('click',()=>location.reload());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(token)void sincronizar();else void configurar();}});
 setInterval(()=>{
  if(tela==='jogo')atualizarRelogio();
+ if(tela==='feedback' && proxima && performance.now()>=feedbackAte && !enviando){const p=proxima;proxima=null;renderizar(p);void sincronizar();return;}
  if(token && !enviando && !sincronizando) {
   const agora=performance.now();
   if((tela==='jogo' && restante()===0 && agora>=proximoSync) || (tela==='feedback' && agora>=feedbackAte && agora>=proximoSync) || (tela!=='feedback' && agora-ultimaConsulta>=3000 && agora>=proximoSync))void sincronizar();

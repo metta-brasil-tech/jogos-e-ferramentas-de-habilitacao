@@ -172,3 +172,16 @@ main [role=status]{color:var(--amarelo);font-size:15px;font-weight:600}
 .aviso-instrutor{color:var(--amarelo);font-weight:600;margin:16px 0}
 .controle{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.controle .principal{width:auto}.controle #encerrar{margin-top:0}
 .lista-postos{margin:0;padding-left:20px;color:var(--aco)}
+
+/* Feedback da resposta: caixa verde (acertou) ou vermelha (não foi dessa vez). */
+.caixa-feedback{display:flex;align-items:center;gap:20px;max-width:640px;width:100%;margin:0 auto;padding:24px 28px;border-radius:16px;border:2px solid;text-align:left}
+.caixa-feedback h1{font-size:clamp(26px,3.4vw,40px);margin:0;text-align:left}
+.caixa-feedback p{margin:6px 0 0;font-size:16px}
+.icone-feedback{flex:none;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font:800 30px/1 var(--display);color:#fff}
+.caixa-certa{background:#0F2E1D;border-color:#2FBF71}.caixa-certa .icone-feedback{background:#2FBF71;color:#06210f}
+.feedback .caixa-certa h1,.feedback .caixa-errada h1{color:#fff}
+.caixa-errada{background:#3A1418;border-color:#E5484D}.caixa-errada .icone-feedback{background:#E5484D}
+@media (max-width:600px){.caixa-feedback{padding:18px;gap:14px}.icone-feedback{width:44px;height:44px;font-size:24px}}
+
+/* Logo do cliente anexada ao bloco: selo claro, para aparecer em qualquer cor de logo. */
+.marca .logo-cliente.logo-bloco{background:#fff;padding:4px 12px;border-radius:10px;height:44px;width:auto;max-width:200px;object-fit:contain}

@@ -190,6 +190,7 @@ $('salvar-lote').addEventListener('click',async()=>{
   mensagem(r.criadas+' pergunta(s) cadastrada(s).');
   $('lote-perguntas').replaceChildren();
   await atualizar();
+  mostrarSucesso(r.criadas===1?'1 pergunta salva com sucesso':r.criadas+' perguntas salvas com sucesso',blocoNomeado()?'Bloco: '+blocoAtual:'');
  } catch(err) {mensagem(err.message);}
 });
 $('copiar-base').addEventListener('click',async()=>{
@@ -226,6 +227,12 @@ function campoRotulado(rotulo,campo) {
  const wrap=elemento('div',undefined,'campo-edicao');
  const l=elemento('label',rotulo);l.htmlFor=id;
  wrap.append(l,campo);return wrap;
+}
+let sucessoTimer=null;
+function mostrarSucesso(titulo,detalhe) {
+ const caixa=$('caixa-sucesso');$('sucesso-titulo').textContent=titulo;$('sucesso-detalhe').textContent=detalhe;$('sucesso-detalhe').hidden=!detalhe;
+ caixa.hidden=false;caixa.scrollIntoView?.({block:'center',behavior:'smooth'});
+ clearTimeout(sucessoTimer);sucessoTimer=setTimeout(()=>{caixa.hidden=true;},10000);
 }
 async function acaoPergunta(acao,id) {await chamar(acao,{id});await atualizar();}
 function editarPergunta(p) {
@@ -286,6 +293,10 @@ function desenharFiltroBlocos() {
  $('bloco-info').textContent=blocoNomeado()
   ?`Bloco "${blocoAtual}": ${ativas} pergunta(s) ativa(s). As perguntas novas entram neste bloco.`
   :blocoAtual===SEM_BLOCO?`Perguntas sem bloco: ${ativas} ativa(s).`:'Mostrando as perguntas de todos os blocos.';
+ const logo=blocoNomeado()?(estado.blocosLogo||{})[blocoAtual]:null;
+ $('bloco-logo').hidden=!blocoNomeado();
+ $('logo-previa-img').hidden=!logo;if(logo)$('logo-previa-img').src=logo;
+ $('logo-previa-vazio').hidden=Boolean(logo);$('logo-remover').hidden=!logo;
  $('titulo-lote').textContent=blocoNomeado()?'Cadastrar perguntas no bloco "'+blocoAtual+'"':'Cadastrar perguntas (em lote)';
 }
 function trocarBloco(novo,abrirVazio=false) {
@@ -296,18 +307,47 @@ function trocarBloco(novo,abrirVazio=false) {
  desenharPerguntas();return true;
 }
 $('filtro-bloco').addEventListener('change',()=>trocarBloco($('filtro-bloco').value));
-$('novo-bloco').addEventListener('click',()=>{$('novo-bloco-form').hidden=false;$('nome-novo-bloco').value='';$('nome-novo-bloco').focus();});
+$('novo-bloco').addEventListener('click',()=>{$('novo-bloco-form').hidden=false;$('nome-novo-bloco').value='';$('logo-novo-bloco').value='';$('nome-novo-bloco').focus();});
 $('cancelar-bloco').addEventListener('click',()=>{$('novo-bloco-form').hidden=true;});
-const criarBloco=()=>{
+// Reduz a imagem escolhida (máx. 600 px, PNG para manter transparência) antes de enviar.
+async function prepararLogo(arquivo) {
+ if(!/^image\/(png|jpe?g|webp)$/.test(arquivo.type))throw new Error('Use uma imagem PNG, JPG ou WebP.');
+ const bmp=await createImageBitmap(arquivo);
+ const k=Math.min(1,600/Math.max(bmp.width,bmp.height));
+ const c=document.createElement('canvas');c.width=Math.max(1,Math.round(bmp.width*k));c.height=Math.max(1,Math.round(bmp.height*k));
+ c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+ return {imagemBase64:c.toDataURL('image/png').split(',')[1],tipo:'image/png'};
+}
+const criarBloco=async()=>{
  const nome=$('nome-novo-bloco').value.trim().replace(/\s+/g,' ');
  if(!nome)return mensagem('Dê um nome ao bloco.');
  if(nome===SEM_BLOCO)return mensagem('Escolha outro nome.');
- const existe=estado.blocos.includes(nome)||blocosNovos.has(nome);
- if(!existe)blocosNovos.add(nome);
+ const existe=estado.blocos.includes(nome);
+ let comLogo=false;
+ try {
+  const arquivo=$('logo-novo-bloco').files[0];
+  const extra=arquivo?await prepararLogo(arquivo):{};
+  comLogo=Boolean(arquivo);
+  await chamar('bloco-salvar',{bloco:nome,...extra});
+  await atualizar();
+ } catch(err) {return mensagem(err.message||'Não foi possível criar o bloco.');}
  if(!trocarBloco(nome,!existe))return;
- $('novo-bloco-form').hidden=true;
- mensagem(existe?`O bloco "${nome}" já existia: mostrando as perguntas dele.`:`Bloco "${nome}" criado. Preencha as perguntas e clique em "Salvar todas"; o bloco só fica gravado com a primeira pergunta salva.`);
+ $('novo-bloco-form').hidden=true;$('logo-novo-bloco').value='';
+ mensagem(existe?`O bloco "${nome}" já existia: mostrando as perguntas dele.`:`Bloco "${nome}" criado${comLogo?' com a logo do cliente':''}. Preencha as perguntas e clique em "Salvar todas".`);
 };
+$('logo-trocar').addEventListener('change',async()=>{
+ const arquivo=$('logo-trocar').files[0];if(!arquivo||!blocoNomeado())return;
+ try {
+  await chamar('bloco-salvar',{bloco:blocoAtual,...await prepararLogo(arquivo)});
+  await atualizar();mostrarSucesso('Logo salva com sucesso','Ela aparece durante o jogo das rodadas do bloco "'+blocoAtual+'".');
+ } catch(err) {mensagem(err.message||'Não foi possível enviar a logo.');}
+ $('logo-trocar').value='';
+});
+$('logo-remover').addEventListener('click',async()=>{
+ if(!blocoNomeado()||!confirm('Remover a logo do bloco "'+blocoAtual+'"?'))return;
+ try {await chamar('bloco-salvar',{bloco:blocoAtual,removerLogo:true});await atualizar();mensagem('Logo removida.');}
+ catch(err) {mensagem(err.message);}
+});
 $('criar-bloco').addEventListener('click',criarBloco);
 $('nome-novo-bloco').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();criarBloco();}});
 function desenharPerguntas() {

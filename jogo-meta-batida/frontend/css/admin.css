@@ -85,3 +85,21 @@ th{white-space:nowrap;overflow-wrap:normal;word-break:normal}
 .novo-bloco-linha{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .novo-bloco-linha input{flex:1 1 240px;min-width:0;margin:0}
 .bloco-info{font-size:14px;color:var(--cinza-azul);margin:0 0 8px}
+
+/* Caixa de sucesso ao salvar as perguntas. */
+.caixa-sucesso{display:flex;align-items:center;gap:14px;margin:12px 0 20px;padding:16px 20px;border-radius:12px;background:#E7F5EC;border:2px solid #1E7A45;color:#0B3B20}
+.caixa-sucesso strong{display:block;font-size:17px}.caixa-sucesso p{margin:2px 0 0;font-size:14px}
+.icone-sucesso{flex:none;width:36px;height:36px;border-radius:50%;background:#1E7A45;color:#fff;display:grid;place-items:center;font:800 20px/1 var(--display)}
+
+/* Logo do cliente no bloco de perguntas. */
+.rotulo-logo{display:block;font-size:12px;font-weight:600;margin:12px 0 6px}
+.novo-bloco input[type=file]{display:block;margin:0 0 12px;max-width:100%}
+.bloco-logo{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin:0 0 12px;padding:12px 16px;border:1px solid #C9DAE3;border-radius:12px}
+.logo-previa{display:flex;align-items:center;justify-content:center;min-width:140px;min-height:56px;padding:6px 12px;border-radius:8px;background:#fff;border:1px dashed #C9DAE3}
+.logo-previa img{max-height:56px;max-width:180px;object-fit:contain;display:block}
+.logo-previa span{font-size:13px;color:var(--cinza-azul)}
+.logo-acoes{display:flex;flex-wrap:wrap;gap:8px}
+.botao-arquivo{display:inline-flex;align-items:center;padding:12px 20px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer}
+.caixa-sucesso[role=status],.caixa-sucesso[role=status] strong,.caixa-sucesso[role=status] p{color:#0B3B20;font-size:inherit}
+.caixa-sucesso[role=status] strong{font-size:17px}.caixa-sucesso[role=status] p{font-size:14px;font-weight:400}
+.logo-acoes .discreto{padding:12px 20px;font-size:13px;min-height:0;line-height:1.3}

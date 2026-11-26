@@ -34,13 +34,21 @@
  </div>
  <div id="novo-bloco-form" class="novo-bloco" hidden>
   <label for="nome-novo-bloco">Nome do novo bloco</label>
-  <div class="novo-bloco-linha"><input id="nome-novo-bloco" maxlength="60" placeholder="ex.: Cliente X · Treinamento de março"><button type="button" id="criar-bloco" class="principal">Criar bloco</button><button type="button" id="cancelar-bloco" class="discreto">Cancelar</button></div>
+  <div class="novo-bloco-linha"><input id="nome-novo-bloco" maxlength="60" placeholder="ex.: Cliente X · Treinamento de março"></div>
+  <label for="logo-novo-bloco" class="rotulo-logo">Logo do cliente (opcional, aparece durante o jogo)</label>
+  <input id="logo-novo-bloco" type="file" accept="image/png,image/jpeg,image/webp">
+  <div class="novo-bloco-linha"><button type="button" id="criar-bloco" class="principal">Criar bloco</button><button type="button" id="cancelar-bloco" class="discreto">Cancelar</button></div>
+ </div>
+ <div id="bloco-logo" class="bloco-logo" hidden>
+  <div class="logo-previa"><img id="logo-previa-img" alt="Logo do cliente neste bloco" hidden><span id="logo-previa-vazio">Sem logo neste bloco</span></div>
+  <div class="logo-acoes"><label for="logo-trocar" class="discreto botao-arquivo">Anexar ou trocar logo</label><input id="logo-trocar" type="file" accept="image/png,image/jpeg,image/webp" hidden><button type="button" id="logo-remover" class="discreto">Remover logo</button></div>
  </div>
  <p id="bloco-info" class="bloco-info"></p>
  <h2 id="titulo-lote">Cadastrar perguntas (em lote)</h2>
  <datalist id="blocos-existentes"></datalist>
  <div id="lote-perguntas"></div>
  <div class="barra"><button type="button" id="add-pergunta" class="discreto">+ Nova pergunta</button><button type="button" id="salvar-lote" class="principal">Salvar todas</button><button type="button" id="copiar-base" class="discreto">Copiar perguntas base (Venda 4.0)</button></div>
+ <div id="caixa-sucesso" class="caixa-sucesso" role="status" aria-live="polite" hidden><span class="icone-sucesso" aria-hidden="true">✓</span><div><strong id="sucesso-titulo"></strong><p id="sucesso-detalhe"></p></div></div>
  <h2>Ativas</h2><div id="lista-ativas"></div>
  <h2>Ocultas</h2><div id="lista-ocultas"></div>
  <h2>Excluídas (lixeira)</h2><div id="lista-excluidas"></div>

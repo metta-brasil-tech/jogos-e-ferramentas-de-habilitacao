@@ -36,6 +36,13 @@ async function emitirRanking(rodadaId: string) {
   }).catch(() => {});
 }
 
+// Manda o ranking ao vivo SEM segurar a resposta do jogador: o broadcast roda em segundo plano.
+function emitirEmSegundoPlano(rodadaId: string) {
+  const p = emitirRanking(rodadaId).catch(() => {});
+  const er = (globalThis as any).EdgeRuntime;
+  if (er?.waitUntil) er.waitUntil(p);
+}
+
 async function montarRanking(rodadaId: string) {
   const { data: rodada } = await db.from("rodada").select("*").eq("id", rodadaId).single();
   const { data: jogadores } = await db.from("jogador")
@@ -207,13 +214,17 @@ async function posicoes(rodadaId: string) {
 }
 
 // ---- Monta o Estado do jogador (retorno de jogador/comecar/responder) ------
-async function estadoDe(token: string, feedback?: any) {
+// previa = true: só espia a próxima pergunta (sem gravar o início do relógio), para o app
+// carregá-la durante o feedback e trocar de tela na hora, sem esperar a rede.
+async function estadoDe(token: string, feedback?: any, previa = false) {
   const { data: j } = await db.from("jogador").select("*").eq("token", token).maybeSingle();
   if (!j) return { _404: true };
-  const { data: rodada } = await db.from("rodada").select("*").eq("id", j.rodada_id).single();
-  const perguntas = await perguntasDaRodada(j.rodada_id);
+  const [{ data: rodada }, perguntas, { geral }] = await Promise.all([
+    db.from("rodada").select("*").eq("id", j.rodada_id).single(),
+    perguntasDaRodada(j.rodada_id),
+    posicoes(j.rodada_id),
+  ]);
   const total = perguntas.length;
-  const { geral } = await posicoes(j.rodada_id);
 
   const base: any = {
     rodada: {
@@ -244,7 +255,7 @@ async function estadoDe(token: string, feedback?: any) {
   // /comecar e /responder deixam pergunta_iniciada_em em null ao avançar, pra não descontar
   // o tempo de carregamento/feedback que o jogador ainda nem viu a pergunta na tela.
   let inicio = j.pergunta_iniciada_em ? new Date(j.pergunta_iniciada_em).getTime() : Date.now();
-  if (!j.pergunta_iniciada_em) {
+  if (!j.pergunta_iniciada_em && !previa) {
     await db.from("jogador").update({ pergunta_iniciada_em: new Date(inicio).toISOString() }).eq("id", j.id);
   }
   const restanteMs = Math.max(0, totalMs - (Date.now() - inicio));
@@ -265,7 +276,7 @@ async function estadoDe(token: string, feedback?: any) {
           erros: j.erros + 1, indice_atual: proximo,
           situacao: terminou ? "terminou" : "em-jogo", pergunta_iniciada_em: null,
         }).eq("id", j.id);
-        await emitirRanking(rodada.id);
+        emitirEmSegundoPlano(rodada.id);
         return estadoDe(token, terminou ? undefined : { mensagem: "Tempo esgotado! 0 pontos.", pontos: 0, restanteMs: 2500 });
       }
     }
@@ -306,7 +317,9 @@ Deno.serve(async (req) => {
       return json({
         liberado: !!rodada && rodada.status === "aberta",
         mensagem: rodada ? null : (tenant.mensagem_home ?? "Aguarde o instrutor abrir o jogo"),
-        rodada: rodada ? await (async () => { const pr = await perguntasDaRodada(rodada.id); return {
+        rodada: rodada ? await (async () => { const [pr, { data: bc }] = await Promise.all([perguntasDaRodada(rodada.id),
+          rodada.bloco ? db.from("bloco_config").select("logo_url").eq("tenant_id", tenant.id).eq("nome", rodada.bloco).maybeSingle() : Promise.resolve({ data: null })]); return {
+          logo: (bc as any)?.logo_url ?? null,
           id: rodada.id, nome: rodada.nome, segundos: segundosDaRodada(pr, rodada), tempoUnico: tempoUnicoDa(pr, rodada),
           perguntas: pr.length || null,
           travada: rodada.travada, podio: rodada.podio,
@@ -342,14 +355,14 @@ Deno.serve(async (req) => {
         situacao: rodada.travada ? "aguardando" : "aguardando",
       });
       if (error) return erro("Não foi possível entrar. Tente outro nome.", 409);
-      await emitirRanking(rodada.id);
+      emitirEmSegundoPlano(rodada.id);
       return json({ token });
     }
 
     // ---------------- GET /jogador ----------------
     if (rota === "/jogador" && req.method === "GET") {
       if (!bearer) return erro("Sem autenticação.", 401);
-      const e = await estadoDe(bearer);
+      const e = await estadoDe(bearer, undefined, url.searchParams.get("previa") === "1");
       if ((e as any)._404) return erro("Participação não encontrada.", 401);
       return json(e);
     }
@@ -371,7 +384,7 @@ Deno.serve(async (req) => {
           situacao: "em-jogo", indice_atual: 0, pergunta_iniciada_em: null,
           ordem_perguntas: ordemAleatoria(total),
         }).eq("id", j.id);
-        await emitirRanking(rodada.id);
+        emitirEmSegundoPlano(rodada.id);
       }
       return json(await estadoDe(bearer));
     }
@@ -381,16 +394,17 @@ Deno.serve(async (req) => {
       if (!bearer) return erro("Sem autenticação.", 401);
       const { data: j } = await db.from("jogador").select("*").eq("token", bearer).maybeSingle();
       if (!j) return erro("Participação não encontrada.", 401);
-      const { data: rodada } = await db.from("rodada").select("*").eq("id", j.rodada_id).single();
+      const [{ data: rodada }, perguntas, { data: jaRespondeu }] = await Promise.all([
+        db.from("rodada").select("*").eq("id", j.rodada_id).single(),
+        perguntasDaRodada(j.rodada_id),
+        db.from("resposta").select("ordem").eq("jogador_id", j.id).eq("ordem", j.indice_atual).maybeSingle(),
+      ]);
       if (rodada.status !== "aberta" || j.situacao !== "em-jogo") return erro("Fora de jogo.", 409);
-      const perguntas = await perguntasDaRodada(j.rodada_id);
       const ordemJ = j.ordem_perguntas?.length === perguntas.length ? j.ordem_perguntas : perguntas.map((_: any, i: number) => i);
       const q = perguntas[ordemJ[j.indice_atual]];
       if (!q || q.pergunta_id !== body.perguntaId) return erro("Pergunta fora de sincronia.", 409);
 
       // resposta repetida -> 409 (o cliente trata como já registrada)
-      const { data: jaRespondeu } = await db.from("resposta").select("ordem")
-        .eq("jogador_id", j.id).eq("ordem", j.indice_atual).maybeSingle();
       if (jaRespondeu) return erro("Resposta já registrada.", 409);
 
       const segs = tempoDaPergunta(q, rodada);
@@ -401,13 +415,12 @@ Deno.serve(async (req) => {
       // Pontuação por velocidade (inferida do contrato): 500 na trave, 1000 instantâneo, 0 se erra.
       const pontos = acertou ? Math.round(500 + 500 * (restanteMs / totalMs)) : 0;
 
-      await db.from("resposta").insert({
-        jogador_id: j.id, ordem: j.indice_atual, opcao: Number(body.opcao),
-        acertou, pontos, ms: totalMs - restanteMs,
-      });
       const proximo = j.indice_atual + 1;
       const terminou = proximo >= perguntas.length;
-      await db.from("jogador").update({
+      const [, { error: erroJogador }] = await Promise.all([db.from("resposta").insert({
+        jogador_id: j.id, ordem: j.indice_atual, opcao: Number(body.opcao),
+        acertou, pontos, ms: totalMs - restanteMs,
+      }), db.from("jogador").update({
         pontos: j.pontos + pontos,
         acertos: j.acertos + (acertou ? 1 : 0),
         erros: j.erros + (acertou ? 0 : 1),
@@ -416,8 +429,9 @@ Deno.serve(async (req) => {
         // null: o cronômetro da próxima pergunta só começa quando ela for de fato buscada
         // (estadoDe carimba na hora), não agora — o jogador ainda está vendo o feedback.
         pergunta_iniciada_em: null,
-      }).eq("id", j.id);
-      await emitirRanking(rodada.id);
+      }).eq("id", j.id)]);
+      if (erroJogador) return erro("Não foi possível registrar a resposta.", 500);
+      emitirEmSegundoPlano(rodada.id);
 
       const feedback = {
         mensagem: acertou ? `Você acertou! +${pontos} pontos` : "Resposta incorreta.",
@@ -511,7 +525,10 @@ Deno.serve(async (req) => {
           for (const e of esperados ?? []) esperadosPorRodada.set(e.rodada_id, (esperadosPorRodada.get(e.rodada_id) ?? 0) + 1);
         }
         const ps = perguntas ?? [];
-        const blocos = [...new Set(ps.filter((p: any) => !p.excluida_em && p.bloco).map((p: any) => p.bloco))];
+        const { data: blocosCfg } = await db.from("bloco_config").select("nome,logo_url").eq("tenant_id", tenant.id);
+        const blocosLogo: Record<string, string | null> = {};
+        for (const b of blocosCfg ?? []) blocosLogo[b.nome] = b.logo_url;
+        const blocos = [...new Set([...ps.filter((p: any) => !p.excluida_em && p.bloco).map((p: any) => p.bloco), ...Object.keys(blocosLogo)])];
         return json({
           rodadas: (rodadas ?? []).map((r: any) => ({
             id: r.id, nome: r.nome, status: r.status, travada: r.travada, segundos: r.segundos,
@@ -524,12 +541,35 @@ Deno.serve(async (req) => {
             .map((p: any) => ({ id: p.id, texto: p.texto, tipo: p.tipo, tema: p.tema, opcoes: p.opcoes, correta: p.correta, segundos: p.segundos, imagem: p.imagem, bloco: p.bloco, base: p.base })),
           perguntasExcluidas: ps.filter((p: any) => p.excluida_em)
             .map((p: any) => ({ id: p.id, texto: p.texto, bloco: p.bloco, excluidaEm: p.excluida_em })),
-          blocos, lojas: lojas ?? [],
+          blocos, blocosLogo, lojas: lojas ?? [],
           tenant: { nome: tenant.nome, cor: tenant.cor_primaria, logo: tenant.logo_url, sobretitulo: tenant.sobretitulo, cargoFixo: tenant.cargo_fixo, rotuloLoja: tenant.rotulo_loja },
         });
       }
 
       // ---- perguntas: criar em lote, editar, ocultar/reativar, excluir/restaurar ----
+      // ---- bloco de perguntas: cria o bloco e/ou troca/remove a logo do cliente ----------
+      if (acao === "bloco-salvar") {
+        const nome = String(body.bloco ?? "").trim().replace(/\s+/g, " ").slice(0, 60);
+        if (!nome) return erro("Dê um nome ao bloco.");
+        const { data: atual } = await db.from("bloco_config").select("logo_url").eq("tenant_id", tenant.id).eq("nome", nome).maybeSingle();
+        let logoUrl: string | null = (atual as any)?.logo_url ?? null;
+        if (body.removerLogo) logoUrl = null;
+        if (body.imagemBase64) {
+          const tipo = String(body.tipo ?? "image/png");
+          const ext = ({ "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" } as any)[tipo];
+          if (!ext) return erro("Use uma imagem PNG, JPG ou WebP.");
+          let bytes: Uint8Array;
+          try { bytes = Uint8Array.from(atob(String(body.imagemBase64)), (c) => c.charCodeAt(0)); } catch { return erro("Imagem inválida."); }
+          if (bytes.length > 2 * 1024 * 1024) return erro("A imagem passa de 2 MB.");
+          const caminho = `${tenant.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          const { error: errUp } = await db.storage.from("logos").upload(caminho, bytes, { contentType: tipo, upsert: false });
+          if (errUp) return erro("Não foi possível enviar a logo: " + errUp.message, 500);
+          logoUrl = `${URL_SB}/storage/v1/object/public/logos/${caminho}`;
+        }
+        const { error: errBloco } = await db.from("bloco_config").upsert({ tenant_id: tenant.id, nome, logo_url: logoUrl }, { onConflict: "tenant_id,nome" });
+        if (errBloco) return erro("Não foi possível salvar o bloco: " + errBloco.message, 500);
+        return json({ bloco: nome, logo: logoUrl });
+      }
       if (acao === "perguntas-criar") {
         const lista = Array.isArray(body.perguntas) ? body.perguntas : [];
         if (!lista.length) return erro("Mande ao menos 1 pergunta.");

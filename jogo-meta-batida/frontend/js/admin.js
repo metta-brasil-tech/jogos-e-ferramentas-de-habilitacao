@@ -30,7 +30,7 @@ function desenharRodadas() {
  $('lista-rodadas').replaceChildren(...estado.rodadas.map(r=>{
   const card=elemento('article',undefined,'painel');
   card.append(elemento('h3',r.nome));
-  card.append(elemento('p',`${r.status} · ${r.travada?'travada (aguardando início)':'liberada'} · ${r.segundos}s/pergunta · pódio ${r.podio}${r.bloco?' · bloco "'+r.bloco+'"':''}`));
+  card.append(elemento('p',`${r.status} · ${r.travada?'travada (aguardando início)':'liberada'} · pódio ${r.podio}${r.bloco?' · bloco "'+r.bloco+'"':''}`));
   card.append(linkCopiavel('Link do jogo',linkComTenant('?r='+r.id)));
   card.append(linkCopiavel('Link do telão',linkComTenant('telao.html?r='+r.id)));
   card.append(elemento('p',r.esperados?`${r.esperados} nome(s) na lista de seleção.`:'Sem lista de nomes esperados (jogador digita o nome livremente).'));
@@ -97,10 +97,10 @@ $('form-rodada').addEventListener('submit',async e=>{
  e.preventDefault();
  try {
   await chamar('rodada-criar',{
-   nome:$('r-nome').value,segundos:Number($('r-segundos').value),podio:$('r-podio').value,
+   nome:$('r-nome').value,podio:$('r-podio').value,
    loja:$('r-loja').value||null,bloco:$('r-bloco').value||null,publico:$('r-publico').value||null,
   });
-  $('form-rodada').reset();$('r-segundos').value='30';mensagem('Rodada criada — ela só começa quando você clicar em "Começar para todos".');
+  $('form-rodada').reset();mensagem('Rodada criada — ela só começa quando você clicar em "Começar para todos".');
   await atualizar();
  } catch(err) {mensagem(err.message);}
 });
@@ -165,7 +165,7 @@ function novaLinhaPergunta() {
  const opcoes=[0,1,2,3].map(i=>input('text','Opção '+String.fromCharCode(65+i)));
  const correta=elemento('select');
  for(let i=0;i<4;i++){const o=elemento('option','Correta: '+String.fromCharCode(65+i));o.value=String(i);correta.append(o);}
- const segundos=input('number','Segundos (só vale se for maior que o da rodada)');segundos.min='5';segundos.max='3600';
+ const segundos=input('number','Segundos (tempo desta pergunta)');segundos.min='5';segundos.max='3600';segundos.value='30';segundos.required=true;segundos.setAttribute('aria-label','Segundos para responder esta pergunta');
  const bloco=input('text','Bloco (opcional, ex.: Bloco 1)');bloco.setAttribute('list','blocos-existentes');
  if(blocoNomeado()){bloco.value=blocoAtual;bloco.readOnly=true;bloco.title='Esta pergunta entra no bloco '+blocoAtual;}
  const imagem=input('text','URL da imagem (opcional)');
@@ -174,7 +174,7 @@ function novaLinhaPergunta() {
  linha._coletar=()=>({
   texto:texto.value.trim(),tipo:tipo.value.trim()||null,tema:tema.value.trim()||null,
   opcoes:opcoes.map(o=>o.value.trim()),correta:Number(correta.value),
-  segundos:segundos.value?Number(segundos.value):null,bloco:bloco.value.trim()||null,imagem:imagem.value.trim()||null,
+  segundos:Number(segundos.value),bloco:bloco.value.trim()||null,imagem:imagem.value.trim()||null,
  });
  return linha;
 }
@@ -184,6 +184,7 @@ $('salvar-lote').addEventListener('click',async()=>{
  if(!linhas.length)return mensagem('Clique em "+ Nova pergunta" pelo menos uma vez.');
  const perguntas=linhas.map(l=>l._coletar());
  for(const p of perguntas)if(!p.texto || p.opcoes.some(o=>!o))return mensagem('Preencha o texto e as 4 opções de cada pergunta.');
+ for(const p of perguntas)if(!(p.segundos>=5 && p.segundos<=3600))return mensagem('Informe o tempo de cada pergunta, entre 5 e 3600 segundos.');
  try {
   const r=await chamar('perguntas-criar',{perguntas});
   mensagem(r.criadas+' pergunta(s) cadastrada(s).');
@@ -247,7 +248,7 @@ function editarPergunta(p) {
  for(const l of linhas)l.classList.toggle('correta',l._radio.checked);
  const tipo=input('text','ex.: Fácil');tipo.value=p.tipo||'';
  const tema=input('text','ex.: Mapear');tema.value=p.tema||'';
- const segundos=input('number','só vale se for maior que o da rodada');segundos.min='5';segundos.max='3600';if(p.segundos)segundos.value=p.segundos;
+ const segundos=input('number','tempo desta pergunta');segundos.min='5';segundos.max='3600';segundos.value=p.segundos||30;
  const bloco=input('text','opcional');bloco.value=p.bloco||'';bloco.setAttribute('list','blocos-existentes');
  const imagem=input('text','opcional');imagem.value=p.imagem||'';
  const aviso=elemento('p','',undefined);aviso.setAttribute('role','status');
@@ -259,7 +260,7 @@ function editarPergunta(p) {
   try {
    await chamar('pergunta-editar',{
     id:p.id,texto:texto.value.trim(),tipo:tipo.value.trim()||null,tema:tema.value.trim()||null,
-    opcoes:opcoesVal,correta:marcada,segundos:segundos.value?Number(segundos.value):null,
+    opcoes:opcoesVal,correta:marcada,segundos:Number(segundos.value)||30,
     bloco:bloco.value.trim()||null,imagem:imagem.value.trim()||null,
    });
    $('detalhe').close();mensagem('Pergunta atualizada.');
@@ -270,7 +271,7 @@ function editarPergunta(p) {
  grupo.append(elemento('legend','Alternativas (marque a correta)'),...linhas);
  const extras=elemento('div',undefined,'extras-edicao');
  extras.append(campoRotulado('Tema',tema),campoRotulado('Tipo / nível',tipo),campoRotulado('Bloco',bloco),
-  campoRotulado('Segundos',segundos),campoRotulado('URL da imagem',imagem));
+  campoRotulado('Tempo da pergunta (segundos)',segundos),campoRotulado('URL da imagem',imagem));
  div.append(campoRotulado('Pergunta',texto),grupo,extras,aviso,salvar);
  abrirDetalhe('Editar pergunta',div);
 }

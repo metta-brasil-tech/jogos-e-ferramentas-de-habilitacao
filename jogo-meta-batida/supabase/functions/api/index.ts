@@ -83,10 +83,12 @@ function embaralhar<T>(lista: T[]): T[] {
 }
 
 // ---- Congela a lista de perguntas na entrada do 1º jogador ------------------
-// Tempo de uma pergunta: vale o MAIOR entre o da pergunta e o da rodada (pergunta sem tempo
-// próprio, ou com tempo menor, fica com o da rodada).
-const tempoDaPergunta = (q: any, rodada: any) => Math.max(Number(q?.segundos) || 0, Number(rodada.segundos) || 30);
-const tempoUnicoDa = (perguntas: any[], rodada: any) => perguntas.every((p: any) => tempoDaPergunta(p, rodada) === rodada.segundos);
+// Tempo de uma pergunta: o dela, definido ao criar a pergunta. A rodada não escolhe mais o
+// tempo; o valor da rodada (30 por padrão) só serve de reserva para pergunta antiga sem tempo.
+const tempoDaPergunta = (q: any, rodada: any) => Number(q?.segundos) > 0 ? Number(q.segundos) : (Number(rodada.segundos) || 30);
+const tempoUnicoDa = (perguntas: any[], rodada: any) => perguntas.every((p: any) => tempoDaPergunta(p, rodada) === tempoDaPergunta(perguntas[0], rodada));
+// Segundos "da rodada" mostrados ao jogador quando todas as perguntas têm o mesmo tempo.
+const segundosDaRodada = (perguntas: any[], rodada: any) => perguntas.length && tempoUnicoDa(perguntas, rodada) ? tempoDaPergunta(perguntas[0], rodada) : (Number(rodada.segundos) || 30);
 
 async function congelar(rodada: any) {
   if (rodada.iniciada) return;
@@ -215,7 +217,7 @@ async function estadoDe(token: string, feedback?: any) {
 
   const base: any = {
     rodada: {
-      id: rodada.id, nome: rodada.nome, segundos: rodada.segundos,
+      id: rodada.id, nome: rodada.nome, segundos: segundosDaRodada(perguntas, rodada),
       tempoUnico: tempoUnicoDa(perguntas, rodada), perguntas: total, travada: rodada.travada, podio: rodada.podio,
     },
     jogador: {
@@ -305,7 +307,7 @@ Deno.serve(async (req) => {
         liberado: !!rodada && rodada.status === "aberta",
         mensagem: rodada ? null : (tenant.mensagem_home ?? "Aguarde o instrutor abrir o jogo"),
         rodada: rodada ? await (async () => { const pr = await perguntasDaRodada(rodada.id); return {
-          id: rodada.id, nome: rodada.nome, segundos: rodada.segundos, tempoUnico: tempoUnicoDa(pr, rodada),
+          id: rodada.id, nome: rodada.nome, segundos: segundosDaRodada(pr, rodada), tempoUnico: tempoUnicoDa(pr, rodada),
           perguntas: pr.length || null,
           travada: rodada.travada, podio: rodada.podio,
           publico: rodada.publico, loja: rodada.loja, responsavel: rodada.responsavel,
@@ -539,7 +541,7 @@ Deno.serve(async (req) => {
           if (!(correta >= 0 && correta <= 3)) return erro("Opção correta precisa ser 0-3.");
           linhas.push({
             tenant_id: tenant.id, texto: String(p.texto), tipo: p.tipo ?? null, tema: p.tema ?? null,
-            opcoes, correta, segundos: p.segundos ?? null, imagem: p.imagem ?? null, bloco: p.bloco ?? null,
+            opcoes, correta, segundos: Number(p.segundos) >= 5 ? Math.min(Number(p.segundos), 3600) : 30, imagem: p.imagem ?? null, bloco: p.bloco ?? null,
             status: "aprovada", ativa: true, base: false,
           });
         }

@@ -1,5 +1,5 @@
-import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js';
-import { API, CLIENTE } from './config.js';
+import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js?v=20261127b';
+import { API, CLIENTE } from './config.js?v=20261127b';
 const $=id=>document.getElementById(id);
 let senha='',estado=null;
 // Bloco em foco na aba Perguntas: '' = todos; SEM_BLOCO = perguntas sem bloco; outro = nome do bloco.

@@ -1,4 +1,4 @@
-import { api, lerToken, guardarToken, relogio, enviarResposta, imagemLocal, elemento, desenharPodio, listasPorCargo, conectarRanking, aplicarCargoFixo, aplicarMarca, linkComTenant } from './cliente.js';
+import { api, lerToken, guardarToken, relogio, enviarResposta, imagemLocal, elemento, desenharPodio, listasPorCargo, conectarRanking, aplicarCargoFixo, aplicarMarca, linkComTenant } from './cliente.js?v=20261127b';
 const $=id=>document.getElementById(id);
 const telas=['entrada','instrucoes','jogo','feedback','final'];
 const rodadaLink=new URLSearchParams(globalThis.location?.search ?? '').get('r');

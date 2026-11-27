@@ -289,7 +289,13 @@ function desenharFiltroBlocos() {
  const op=(t,v)=>{const o=elemento('option',t);o.value=v;return o;};
  sel.replaceChildren(op('Todos os blocos',''),...nomes.map(n=>op(n,n)),op('Sem bloco',SEM_BLOCO));
  sel.value=blocoAtual;
+ // Mesmo filtro, ao lado da lista de Ativas, com a contagem de perguntas ativas de cada opção.
+ const conta=f=>estado.perguntasAtivas.filter(f).length;
+ const lista=$('filtro-bloco-lista');
+ lista.replaceChildren(op(`Ver todas (${estado.perguntasAtivas.length})`,''),...nomes.map(n=>op(`${n} (${conta(p=>p.bloco===n)})`,n)),op(`Só as sem bloco (${conta(p=>!p.bloco)})`,SEM_BLOCO));
+ lista.value=blocoAtual;
  const ativas=estado.perguntasAtivas.filter(noBloco).length;
+ $('contagem-ativas').textContent=ativas===1?'1 pergunta ativa nesta visão.':ativas+' perguntas ativas nesta visão.';
  $('bloco-info').textContent=blocoNomeado()
   ?`Bloco "${blocoAtual}": ${ativas} pergunta(s) ativa(s). As perguntas novas entram neste bloco.`
   :blocoAtual===SEM_BLOCO?`Perguntas sem bloco: ${ativas} ativa(s).`:'Mostrando as perguntas de todos os blocos.';
@@ -307,6 +313,7 @@ function trocarBloco(novo,abrirVazio=false) {
  desenharPerguntas();return true;
 }
 $('filtro-bloco').addEventListener('change',()=>trocarBloco($('filtro-bloco').value));
+$('filtro-bloco-lista').addEventListener('change',()=>{if(!trocarBloco($('filtro-bloco-lista').value))$('filtro-bloco-lista').value=blocoAtual;});
 $('novo-bloco').addEventListener('click',()=>{$('novo-bloco-form').hidden=false;$('nome-novo-bloco').value='';$('logo-novo-bloco').value='';$('nome-novo-bloco').focus();});
 $('cancelar-bloco').addEventListener('click',()=>{$('novo-bloco-form').hidden=true;});
 // Reduz a imagem escolhida (máx. 600 px, PNG para manter transparência) antes de enviar.

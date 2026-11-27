@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
-import { API, SUPABASE_URL, SUPABASE_KEY, CLIENTE } from './config.js?v=20261127b';
+import { API, SUPABASE_URL, SUPABASE_KEY, CLIENTE } from './config.js?v=20261127d';
 export const pausa=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // URL absoluta da PASTA da página atual (sem o nome do arquivo). Serve pra montar links pra
 // copiar/compartilhar que funcionem tanto na raiz quanto numa subpasta de cliente (ex.: /vilarejo/).
@@ -113,21 +113,22 @@ export function listasPorCargo(botoes,lista,contexto) {
   if(!aberta || pedindo)return;
   const cargo=aberta,{rodadaId,lojas,id}=contexto();pedindo=true;
   try {
-   const r=await api('/api/ranking?'+new URLSearchParams({...(rodadaId?{rodadaId}:{}),cargo}));
-   if(aberta===cargo){desenharRanking(lista,r.linhas,lojas,id);lista.hidden=false;lista.scrollIntoView?.({block:'nearest'});}
+   // 'Geral' = todos os jogadores da rodada (sem filtro de cargo).
+   const r=await api('/api/ranking?'+new URLSearchParams({...(rodadaId?{rodadaId}:{}),...(cargo==='Geral'?{}:{cargo})}));
+   if(aberta===cargo){const topo=lista.scrollTop;desenharRanking(lista,r.linhas,lojas,id);lista.hidden=false;lista.scrollTop=topo;}
   } catch {if(aberta===cargo){lista.replaceChildren(elemento('p','Não foi possível carregar a lista.'));lista.hidden=false;}}
   finally {pedindo=false;}
  };
- const montar=cargos=>{aberta=null;lista.hidden=true;lista.replaceChildren();botoes.replaceChildren(...cargos.map(cargo=>{
-  const b=elemento('button',cargo,'discreto');b.type='button';b.setAttribute('aria-pressed','false');
+ const montar=cargos=>{aberta=cargos[0]==='Geral'?'Geral':null;lista.hidden=true;lista.replaceChildren();botoes.replaceChildren(...cargos.map(cargo=>{
+  const b=elemento('button',cargo,'discreto');b.type='button';b.setAttribute('aria-pressed',String(cargo===aberta));
   b.addEventListener('click',()=>{
-   aberta=aberta===cargo?null:cargo;
+   aberta=(aberta===cargo && cargo!=='Geral')?null:cargo;
    for(const x of botoes.children)x.setAttribute('aria-pressed',String(x.textContent===aberta));
    lista.hidden=true;lista.replaceChildren();void carregar();
   });
   return b;
  }));};
- montar(['Regional','Gerente','Vendedor','Outro']);
+ montar(['Geral','Regional','Gerente','Vendedor','Outro']);
  carregar.montar=montar;
  return carregar;
 }
@@ -149,7 +150,7 @@ export function aplicarCargoFixo(config,listas) {
   }
   const criar=document.getElementById('criar-rodada');if(criar)criar.hidden=true;
   if(listas && listas.botoes && !listas.botoes.dataset.fixo){
-   listas.carregar.montar([t.cargoFixo]);listas.botoes.dataset.fixo='1';
+   listas.carregar.montar(['Geral']);listas.botoes.dataset.fixo='1';
    const h=listas.botoes.previousElementSibling;if(h&&h.tagName==='H2')h.textContent='Ranking completo';
   }
  }

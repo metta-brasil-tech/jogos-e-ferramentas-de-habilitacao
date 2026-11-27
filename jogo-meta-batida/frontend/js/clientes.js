@@ -1,4 +1,4 @@
-import { api, elemento, baseUrl } from './cliente.js?v=20261127b';
+import { api, elemento, baseUrl } from './cliente.js?v=20261127d';
 const $=id=>document.getElementById(id);
 let senhaMaster='';
 const mensagem=m=>{$('mensagem').textContent=m;};

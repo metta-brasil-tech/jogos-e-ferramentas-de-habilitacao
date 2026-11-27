@@ -1,4 +1,4 @@
-import { api, lerToken, guardarToken, relogio, enviarResposta, imagemLocal, elemento, desenharPodio, listasPorCargo, conectarRanking, aplicarCargoFixo, aplicarMarca, linkComTenant } from './cliente.js?v=20261127b';
+import { api, lerToken, guardarToken, relogio, enviarResposta, imagemLocal, elemento, desenharPodio, listasPorCargo, conectarRanking, aplicarCargoFixo, aplicarMarca, linkComTenant } from './cliente.js?v=20261127d';
 const $=id=>document.getElementById(id);
 const telas=['entrada','instrucoes','jogo','feedback','final'];
 const rodadaLink=new URLSearchParams(globalThis.location?.search ?? '').get('r');
@@ -66,7 +66,7 @@ function renderizar(e,latencia=0) {
   feedbackAte=performance.now()+Math.max(0,e.feedback.restanteMs-latencia);proximoSync=feedbackAte+30;return;
  }
  if(['terminou','encerrada'].includes(e.situacao)) {
-  mostrar('final');perguntaAtual=null;
+  mostrar('final');perguntaAtual=null;void atualizarLista();
   $('resultado').textContent=(e.posicao?(e.situacao==='terminou'?'Até agora: ':'Você: ')+e.posicao+'º lugar · '+e.jogador.nome:e.jogador.nome)+(e.situacao==='terminou'?' · A rodada ainda está em andamento.':'');
   $('estatisticas').replaceChildren(...[['pontos',e.jogador.pontos],['acertos',e.jogador.acertos],['erros',e.jogador.erros]].map(([rotulo,valor])=>{
    const div=elemento('div');div.append(elemento('strong',valor),elemento('span',rotulo));return div;

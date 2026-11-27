@@ -1,8 +1,8 @@
-import { api, desenharPodio, listasPorCargo, conectarRanking, aplicarMarca, aplicarCargoFixo } from './cliente.js?v=20261127b';
+import { api, desenharPodio, listasPorCargo, conectarRanking, aplicarMarca, aplicarCargoFixo } from './cliente.js?v=20261127d';
 const $=id=>document.getElementById(id);
 const rodadaLink=new URLSearchParams(globalThis.location?.search ?? '').get('r');
 let lojas=new Map(),dados=null,config=null,ocupado=false,listaEm=0;
-const atualizarLista=listasPorCargo($('listas'),$('ranking'),()=>({rodadaId:dados?.rodadaId,lojas}));
+const atualizarLista=listasPorCargo($('listas'),$('ranking'),()=>({rodadaId:dados?.rodadaId||rodadaLink||config?.rodada?.id,lojas}));
 function renderizar() {
  if(!dados)return;
  desenharPodio($('podio'),dados.top,lojas);
@@ -15,7 +15,7 @@ const assinarRanking=conectarRanking({
 });
 async function configurar(){
  if(ocupado)return;ocupado=true;
- try {config=await api('/api/config'+(rodadaLink?'?r='+encodeURIComponent(rodadaLink):''));lojas=new Map(config.lojas.map(l=>[l.filial,l.rotulo]));aplicarMarca(config);aplicarCargoFixo(config,{botoes:$('listas'),carregar:atualizarLista});assinarRanking(rodadaLink || config.rodada?.id || null);renderizar();}
+ try {config=await api('/api/config'+(rodadaLink?'?r='+encodeURIComponent(rodadaLink):''));lojas=new Map(config.lojas.map(l=>[l.filial,l.rotulo]));aplicarMarca(config);aplicarCargoFixo(config,{botoes:$('listas'),carregar:atualizarLista});assinarRanking(rodadaLink || config.rodada?.id || null);renderizar();void atualizarLista();}
  catch {$('status').textContent='Reconectando…';}
  finally {ocupado=false;}
 }

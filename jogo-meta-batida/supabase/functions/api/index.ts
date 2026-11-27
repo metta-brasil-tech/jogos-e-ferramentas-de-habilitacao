@@ -491,7 +491,8 @@ Deno.serve(async (req) => {
 
       const { data: rodada } = await db.from("rodada").select("id,grupo")
         .eq("id", body.id).eq("tenant_id", tenant.id).maybeSingle();
-      if (!rodada || !rodada.grupo) return erro("Rodada não encontrada.", 404);
+      // Qualquer rodada do cliente pode ser controlada com a senha de gerente (link do gestor da rodada).
+      if (!rodada) return erro("Rodada não encontrada.", 404);
       const id = rodada.id;
 
       if (body.acao === "ver") return json(await verRodada(id));

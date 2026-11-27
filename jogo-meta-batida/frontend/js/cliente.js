@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
-import { API, SUPABASE_URL, SUPABASE_KEY, CLIENTE } from './config.js?v=20261127f';
+import { API, SUPABASE_URL, SUPABASE_KEY, CLIENTE } from './config.js?v=20261127g';
 export const pausa=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 // URL absoluta da PASTA da página atual (sem o nome do arquivo). Serve pra montar links pra
 // copiar/compartilhar que funcionem tanto na raiz quanto numa subpasta de cliente (ex.: /vilarejo/).

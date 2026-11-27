@@ -1,4 +1,4 @@
-import { api, desenharPodio, listasPorCargo, conectarRanking, aplicarMarca, aplicarCargoFixo } from './cliente.js?v=20261127f';
+import { api, desenharPodio, listasPorCargo, conectarRanking, aplicarMarca, aplicarCargoFixo } from './cliente.js?v=20261127g';
 const $=id=>document.getElementById(id);
 const rodadaLink=new URLSearchParams(globalThis.location?.search ?? '').get('r');
 let lojas=new Map(),dados=null,config=null,ocupado=false,listaEm=0;

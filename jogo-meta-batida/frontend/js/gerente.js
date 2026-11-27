@@ -1,6 +1,8 @@
-import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js?v=20261127f';
+import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js?v=20261127g';
 const $=id=>document.getElementById(id);
 let config=null,senha='',rodada=null,espera=null,ocupado=false;
+// Com ?r=<rodada> a página vira o painel do gestor DESSA rodada (link do gestor, gerado no admin).
+const rodadaLink=new URLSearchParams(globalThis.location?.search ?? '').get('r');
 const status=m=>{$('status').textContent=m;};
 function verCampos() {
  const papel=$('papel').value,nomes=config?.nomes?.[papel] ?? [],lista=nomes.length>0,campo=$('nome-lista');
@@ -14,13 +16,20 @@ function verCampos() {
  $('campo-publico').hidden=papel!=='Regional';$('publico').required=papel==='Regional';
 }
 function mostrar() {
- $('criar').hidden=true;$('criada').hidden=false;$('nome-rodada').textContent=rodada.nome;
+ $('criar').hidden=true;$('gestor-rodada').hidden=true;$('criada').hidden=false;$('nome-rodada').textContent=rodada.nome;
  const fim=rodada.status==='encerrada';$('contagem').textContent=rodada.aPostos.length+' a postos · '+rodada.emJogo+' jogando · '+rodada.terminaram+' terminaram'+(fim?' · rodada encerrada':rodada.travada?' · jogo travado':'');$('encerrar').hidden=fim;$('resetar').hidden=fim;$('comecar-todos').hidden=fim || !rodada.travada;$('a-postos').replaceChildren(...rodada.aPostos.map(p=>elemento('li',p.nome+' · '+p.cargo)));if(fim)clearInterval(espera);
  $('link-jogo').value=linkComTenant('?r='+rodada.id);$('link-telao').value=linkComTenant('telao.html?r='+rodada.id);$('abrir-telao').href=$('link-telao').value;$('whatsapp').href='https://wa.me/?text='+encodeURIComponent('Jogo da Meta Batida: '+$('link-jogo').value);
 }
 async function acompanhar() {
  try {rodada=await api('/api/gerente',{body:{senha,acao:'ver',id:rodada.id}});mostrar();} catch {status('Reconectando…');}
 }
+$('form-gestor').addEventListener('submit',async e=>{
+ e.preventDefault();if(ocupado)return;ocupado=true;status('');senha=$('senha-gestor').value;
+ try {
+  rodada=await api('/api/gerente',{body:{senha,acao:'ver',id:rodadaLink}});
+  mostrar();espera=setInterval(acompanhar,3000);
+ } catch(erro) {senha='';status(erro.message);} finally {ocupado=false;}
+});
 $('papel').addEventListener('change',verCampos);$('nome-lista').addEventListener('change',verCampos);
 $('formulario').addEventListener('submit',async e=>{
  e.preventDefault();if(ocupado)return;ocupado=true;status('');senha=$('senha').value;
@@ -42,7 +51,10 @@ $('comecar-todos').addEventListener('click',()=>controlar('comecar'));
 $('resetar').addEventListener('click',()=>controlar('resetar','Resetar o jogo? Os pontos desta rodada serão apagados, todos voltam para a espera e o jogo fica travado até você começar de novo.'));
 $('encerrar').addEventListener('click',async()=>{
  if(!confirm('Encerrar esta rodada? Ninguém mais poderá jogar nela e ela não poderá ser reaberta.'))return;
- try {await api('/api/gerente',{body:{senha,acao:'encerrar',id:rodada.id}});clearInterval(espera);$('criada').hidden=true;$('criar').hidden=false;status('Rodada encerrada. O resultado fica guardado no admin.');}
+ try {
+  rodada=await api('/api/gerente',{body:{senha,acao:'encerrar',id:rodada.id}});clearInterval(espera);
+  if(rodadaLink){mostrar();}else{$('criada').hidden=true;$('criar').hidden=false;}
+  status('Rodada encerrada. O resultado fica guardado no admin.');}
  catch(erro) {status(erro.message);}
 });
 async function iniciar() {
@@ -51,4 +63,5 @@ async function iniciar() {
   for(const l of config.lojas){const op=elemento('option',l.rotulo);op.value=l.filial;$('loja').append(op);}
  } catch {status('Não foi possível carregar. Atualize a página.');}
 }
+if(rodadaLink){$('criar').hidden=true;$('gestor-rodada').hidden=false;}
 void iniciar();

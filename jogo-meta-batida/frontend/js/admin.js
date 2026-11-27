@@ -1,5 +1,5 @@
-import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js?v=20261127f';
-import { API, CLIENTE } from './config.js?v=20261127f';
+import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js?v=20261127g';
+import { API, CLIENTE } from './config.js?v=20261127g';
 const $=id=>document.getElementById(id);
 let senha='',estado=null;
 // Bloco em foco na aba Perguntas: '' = todos; SEM_BLOCO = perguntas sem bloco; outro = nome do bloco.
@@ -33,6 +33,7 @@ function desenharRodadas() {
   card.append(elemento('p',`${r.status} · ${r.travada?'travada (aguardando início)':'liberada'} · pódio ${r.podio}${r.bloco?' · bloco "'+r.bloco+'"':''}`));
   card.append(linkCopiavel('Link do jogo',linkComTenant('?r='+r.id)));
   card.append(linkCopiavel('Link do telão',linkComTenant('telao.html?r='+r.id)));
+  card.append(linkCopiavel('Link do gestor',linkComTenant('gerente.html?r='+r.id)));
   card.append(elemento('p',r.esperados?`${r.esperados} nome(s) na lista de seleção.`:'Sem lista de nomes esperados (jogador digita o nome livremente).'));
   const barra=elemento('div',undefined,'barra');
   if(r.status==='aberta') {

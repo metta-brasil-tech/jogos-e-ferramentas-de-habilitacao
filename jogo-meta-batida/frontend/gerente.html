@@ -1,9 +1,11 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Criar uma rodada · Meta Batida</title><link rel="stylesheet" href="css/jogo.css?v=20261127f"><script type="module" src="js/gerente.js?v=20261127f"></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Criar uma rodada · Meta Batida</title><link rel="stylesheet" href="css/jogo.css?v=20261127g"><script type="module" src="js/gerente.js?v=20261127g"></script></head>
 <body>
 <header class="marca"><img class="logo-cliente" src="img/logo-metta.svg" alt="Metta" width="150" height="42"><span><img class="logo-jogo" src="img/logo-jogo.png" alt="Jogo da Meta Batida" width="900" height="294"></span><img class="logo-metta" src="img/logo-metta.svg" alt="Metta" width="120" height="26"></header>
 <main class="pagina-rodada">
+<section id="gestor-rodada" hidden><p class="sobretitulo">PAINEL DO GESTOR</p><h1>Controlar a <em>rodada</em></h1>
+<form id="form-gestor"><div class="campo-amplo"><label for="senha-gestor">Senha do gestor</label><input id="senha-gestor" type="password" autocomplete="off" required></div><button class="principal">Entrar</button></form></section>
 <section id="criar"><p class="sobretitulo">GERENTES E REGIONAIS</p><h1>Criar uma <em>rodada</em></h1>
 <form id="formulario"><div class="campo"><label for="papel">Você é</label><select id="papel" required><option value="">Escolha seu cargo</option><option>Gerente</option><option>Regional</option></select></div>
 <div id="campo-nome-lista" class="campo" hidden><label for="nome-lista">Escolha seu nome</label><select id="nome-lista"></select></div>

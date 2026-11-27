@@ -1,4 +1,4 @@
-import { api, lerToken, guardarToken, relogio, enviarResposta, imagemLocal, elemento, desenharPodio, listasPorCargo, conectarRanking, aplicarCargoFixo, aplicarMarca, linkComTenant } from './cliente.js?v=20261127d';
+import { api, lerToken, guardarToken, relogio, enviarResposta, imagemLocal, elemento, desenharPodio, listasPorCargo, conectarRanking, aplicarCargoFixo, aplicarMarca, linkComTenant } from './cliente.js?v=20261127f';
 const $=id=>document.getElementById(id);
 const telas=['entrada','instrucoes','jogo','feedback','final'];
 const rodadaLink=new URLSearchParams(globalThis.location?.search ?? '').get('r');
@@ -49,6 +49,29 @@ async function configurar() {
  } catch {status('Reconectando. Aguarde…');} finally {configurando=false;}
 }
 const atualizarLista=listasPorCargo($('listas'),$('ranking'),()=>({rodadaId:estado?.rodada.id,lojas,id:estado?.jogador.id}));
+// Regras da tela de espera, montadas com os dados da própria rodada (perguntas, tempo, pódio).
+function desenharRegras(e) {
+ const r=e.rodada,t=config?.tenant||{},nomeLoja=t.rotuloLoja||'loja';
+ const plural=(n,um,varios)=>n===1?um:varios;
+ const min=m=>m<1?'menos de 1 minuto':'cerca de '+Math.round(m)+plural(Math.round(m),' minuto',' minutos');
+ const itens=['Jogue com o seu nome.'];
+ if(e.jogador.loja)itens.push(t.rotuloLoja?'Represente o seu '+nomeLoja+'.':'Represente a sua loja.');
+ itens.push('Escolha uma opção: só uma é correta.');
+ if(r.perguntas)itens.push('Esta rodada tem '+r.perguntas+plural(r.perguntas,' pergunta.',' perguntas.'));
+ if(r.tempoMin){
+  itens.push(r.tempoMin===r.tempoMax
+   ?'Você tem '+r.tempoMin+' segundos para cada pergunta.'
+   :'O tempo muda conforme a pergunta, de '+r.tempoMin+' a '+r.tempoMax+' segundos. Ele aparece na tela.');
+  if(r.tempoTotal>=60)itens.push('Se usar todo o tempo, a rodada dura '+min(r.tempoTotal/60)+'.');
+ } else itens.push('Cada pergunta tem tempo para responder.');
+ itens.push('Quanto mais rápido acertar, mais pontos (de 500 a 1.000). Não dá para voltar.');
+ itens.push('Sem resposta, você fica com zero na pergunta.');
+ if(['Regional','Outro'].includes(e.jogador.cargo))itens.push('Como '+e.jogador.cargo+', você joga, mas não entra no pódio.');
+ itens.push(r.podio==='loja'&&e.jogador.loja?'O pódio é por '+nomeLoja+'. Veja sua posição no ranking ao final.':'Veja sua posição no ranking ao final.');
+ $('lista-regras').replaceChildren(...itens.map(txt=>elemento('li',txt)));
+ const nome=r.nome?String(r.nome):'';
+ $('sobretitulo-regras').textContent=nome?'PREPARE-SE PARA JOGAR · '+nome:'PREPARE-SE PARA JOGAR';
+}
 function renderizar(e,latencia=0) {
  estado=e;posicao();conectar();
  $('alternar').hidden=e.rodada.podio!=='loja' || !e.jogador.loja;
@@ -79,7 +102,7 @@ function renderizar(e,latencia=0) {
   $('comecar').disabled=travada;$('comecar').textContent=travada?'Aguarde o instrutor':'Começar';
   $('aviso-instrutor').textContent=travada?'Só comece quando o instrutor orientar. O jogo abre para todos ao mesmo tempo. Depois de começar, o tempo corre e não dá para voltar.':'Ao tocar em Começar, o tempo de cada pergunta passa a correr e não dá para voltar.';
   if(esperou && !travada){esperou=false;setTimeout(()=>void sincronizar(true),0);return;}
-  $('regra-loja').hidden=!e.jogador.loja;$('regra-tempo').textContent=(e.rodada.perguntas?e.rodada.perguntas+' perguntas. ':'')+(e.rodada.tempoUnico===false?'Cada pergunta mostra o tempo que você tem.':'Você tem '+e.rodada.segundos+' segundos por pergunta.');return;}
+  desenharRegras(e);return;}
  if(!e.pergunta)return;
  const q=e.pergunta;
  restante=relogio(Math.max(0,q.restanteMs-latencia));

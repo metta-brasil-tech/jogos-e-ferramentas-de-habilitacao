@@ -1,4 +1,4 @@
-import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js?v=20261127d';
+import { api, elemento, linkComTenant, aplicarMarca } from './cliente.js?v=20261127f';
 const $=id=>document.getElementById(id);
 let config=null,senha='',rodada=null,espera=null,ocupado=false;
 const status=m=>{$('status').textContent=m;};

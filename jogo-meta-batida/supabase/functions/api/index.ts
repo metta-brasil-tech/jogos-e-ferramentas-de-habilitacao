@@ -230,6 +230,7 @@ async function estadoDe(token: string, feedback?: any, previa = false) {
     rodada: {
       id: rodada.id, nome: rodada.nome, segundos: segundosDaRodada(perguntas, rodada),
       tempoUnico: tempoUnicoDa(perguntas, rodada), perguntas: total, travada: rodada.travada, podio: rodada.podio,
+      ...(() => { const ts = perguntas.map((p: any) => tempoDaPergunta(p, rodada)); return ts.length ? { tempoMin: Math.min(...ts), tempoMax: Math.max(...ts), tempoTotal: ts.reduce((a: number, b: number) => a + b, 0) } : {}; })(),
     },
     jogador: {
       id: j.id, nome: j.nome, loja: j.loja, cargo: j.cargo,

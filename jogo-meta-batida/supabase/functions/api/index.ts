@@ -107,7 +107,7 @@ async function congelar(rodada: any) {
   const { data: perguntas } = await q.order("criado_em", { ascending: true });
   // Ordem natural aqui; o embaralhamento é por JOGADOR (jogador.ordem_perguntas), gerado
   // ao começar — cada um joga as mesmas perguntas, mas numa ordem própria e aleatória.
-  const lista = (perguntas ?? []).slice(0, 20);
+  const lista = (perguntas ?? []).slice(0, 50);
   const linhas = lista.map((q: any, i: number) => ({
     rodada_id: rodada.id, ordem: i, pergunta_id: q.id,
     texto: q.texto, tema: q.tema, produto: null,
